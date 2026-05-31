@@ -1,0 +1,30 @@
+==================================================
+HASIL EVALUASI MODEL
+==================================================
+
+Accuracy : 0.8145 (81.45%)
+F1 Score : 0.8341
+
+Confusion Matrix:
+  [[TN=139  FP=48]
+   [FN=26  TP=186]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+ TIDAK_FOKUS       0.84      0.74      0.79       187
+       FOKUS       0.79      0.88      0.83       212
+
+    accuracy                           0.81       399
+   macro avg       0.82      0.81      0.81       399
+weighted avg       0.82      0.81      0.81       399
+
+
+Bobot Fitur (koefisien Logistic Regression):
+  ear            : +1.0494  ↑ meningkatkan FOKUS
+  head_pose      : -2.6625  ↓ menurunkan FOKUS
+  mouth_ratio    : +2.0005  ↑ meningkatkan FOKUS
+
+==================================================
+✅ F1 ≥ 0.80 — Model siap diintegrasikan ke FocusWebCam
+==================================================

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>FocusWebCam | Ethical AI Focus Detection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <!-- MediaPipe FaceMesh -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- Background grid -->
+  <div class="bg-grid"></div>
+
+  <div class="app-wrapper">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-dot"></span>
+        <span class="logo-text">FocusWebCam</span>
+      </div>
+      <div class="header-status" id="headerStatus">INISIALISASI...</div>
+    </header>
+
+    <!-- Main layout -->
+    <main class="main-layout">
+
+      <!-- Kiri: Kamera -->
+      <section class="camera-section">
+        <div class="camera-frame" id="cameraFrame">
+          <video id="webcam" autoplay playsinline muted></video>
+          <canvas id="overlayCanvas"></canvas>
+
+          <!-- Sudut dekoratif -->
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+
+          <!-- Status wajah -->
+          <div class="face-status" id="faceStatus">Menunggu wajah...</div>
+        </div>
+
+        <!-- Tombol start/stop -->
+        <button class="btn-start" id="btnStart">MULAI SESI</button>
+      </section>
+
+      <!-- Kanan: Panel info -->
+      <section class="info-section">
+
+        <!-- Focus Score -->
+        <div class="score-card">
+          <div class="score-label">FOCUS SCORE</div>
+          <div class="score-display">
+            <span class="score-number" id="scoreNumber">--</span>
+            <span class="score-unit">/100</span>
+          </div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" id="scoreBarFill"></div>
+          </div>
+          <div class="score-state" id="scoreState">—</div>
+        </div>
+
+        <!-- Tiga fitur -->
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">👁</div>
+            <div class="feature-name">EAR (Mata)</div>
+            <div class="feature-value" id="earValue">—</div>
+            <div class="feature-bar-track">
+              <div class="feature-bar-fill" id="earBar"></div>
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">↔</div>
+            <div class="feature-name">HEAD POSE</div>
+            <div class="feature-value" id="headValue">—</div>
+            <div class="feature-bar-track">
+              <div class="feature-bar-fill" id="headBar"></div>
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💬</div>
+            <div class="feature-name">MOUTH RATIO</div>
+            <div class="feature-value" id="mouthValue">—</div>
+            <div class="feature-bar-track">
+              <div class="feature-bar-fill" id="mouthBar"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Session stats -->
+        <div class="stats-card">
+          <div class="stats-title">SESI INI</div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value" id="statDuration">00:00</div>
+              <div class="stat-label">Durasi</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="statAvg">--</div>
+              <div class="stat-label">Rata-rata</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="statFocusTime">--%</div>
+              <div class="stat-label">Waktu Fokus</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="statAlerts">0</div>
+              <div class="stat-label">Alert</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini log -->
+        <div class="log-card">
+          <div class="log-title">LOG AKTIVITAS</div>
+          <div class="log-list" id="logList">
+            <div class="log-item log-system">— Sistem siap —</div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast notifikasi -->
+  <div class="toast" id="toast">
+    <div class="toast-icon">⚠</div>
+    <div class="toast-content">
+      <div class="toast-title">Fokus Menurun!</div>
+      <div class="toast-msg" id="toastMsg">Skor rendah selama 5 detik</div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="ethical_guardrails.js"></script>
+  <script src="focus.js"></script>
+</body>
+</html>
