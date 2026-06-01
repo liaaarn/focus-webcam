@@ -610,6 +610,12 @@ with cam_col:
 
         # Pull data dari shared state
         if ctx.video_processor:
+            st.write("FACE:", shared.face_detected)
+            st.write("SCORE:", shared.score)
+            st.write("EAR:", shared.ear)
+            st.write("HEAD:", shared.head)
+            st.write("MOUTH:", shared.mouth)
+            
             with shared._lock:
                 if shared.new_data:
                     st.session_state.last_score = shared.score
