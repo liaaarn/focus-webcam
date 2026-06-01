@@ -39,9 +39,7 @@ st.set_page_config(
 # ─────────────────────────────────────────────
 import mediapipe as mp
 
-st.write(mp.__file__)
-st.write(mp.__version__)
-st.write(hasattr(mp, "solutions"))
+mp_face_mesh = mp.solutions.face_mesh
 
 # ─────────────────────────────────────────────
 # Landmark indices
