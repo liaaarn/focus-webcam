@@ -62,6 +62,7 @@ SMOOTHING_WINDOW = 3
 # ─────────────────────────────────────────────
 # Fitur helpers
 # ─────────────────────────────────────────────
+MOUTH_MAX_REALISTIC = 0.12
 def calc_ear(lm, indices, w, h):
     pts = [(lm[i].x * w, lm[i].y * h) for i in indices]
     A = np.hypot(pts[1][0]-pts[5][0], pts[1][1]-pts[5][1])
@@ -84,7 +85,26 @@ def calc_mouth(lm, w, h):
     right  = lm[MOUTH_RIGHT]
     vertical   = abs((top.y - bottom.y) * h)
     horizontal = abs((left.x - right.x) * w)
-    return vertical / horizontal if horizontal else 0.0
+    ratio = vertical / horizontal if horizontal else 0.0
+    return min(ratio, MOUTH_MAX_REALISTIC
+
+def predict_probability(ear, head_pose, mouth):
+    mouth = min(mouth, MOUTH_MAX_REALISTIC)  # ← batasi mouth
+    
+    ear_s   = standardize(ear, **MODEL_SCALER["ear"])
+    head_s  = standardize(head_pose, **MODEL_SCALER["head_pose"])
+    mouth_s = standardize(mouth, **MODEL_SCALER["mouth_ratio"])
+    
+    # Clamp semua nilai
+    ear_s = max(-3, min(3, ear_s))
+    head_s = max(-3, min(3, head_s))
+    mouth_s = max(-3, min(3, mouth_s))
+    
+    logit = (MODEL_COEF["ear"] * ear_s +
+             MODEL_COEF["head_pose"] * head_s +
+             MODEL_COEF["mouth_ratio"] * mouth_s +
+             MODEL_INTERCEPT)
+    return float(sigmoid(logit))
 
 def standardize(v, mean, std):
     return (v - mean) / std if std else 0.0
