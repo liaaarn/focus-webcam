@@ -86,7 +86,7 @@ def calc_mouth(lm, w, h):
     vertical   = abs((top.y - bottom.y) * h)
     horizontal = abs((left.x - right.x) * w)
     ratio = vertical / horizontal if horizontal else 0.0
-    return min(ratio, MOUTH_MAX_REALISTIC
+    return min(ratio, MOUTH_MAX_REALISTIC)
 
 def predict_probability(ear, head_pose, mouth):
     mouth = min(mouth, MOUTH_MAX_REALISTIC)  # ← batasi mouth
