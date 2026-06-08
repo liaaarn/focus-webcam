@@ -1,145 +1,393 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>FocusWebCam | Ethical AI Focus Detection</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
-  <!-- MediaPipe FaceMesh -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-</head>
-<body>
-
-  <!-- Background grid -->
-  <div class="bg-grid"></div>
-
-  <div class="app-wrapper">
-
-    <!-- Header -->
-    <header class="header">
-      <div class="logo">
-        <span class="logo-dot"></span>
-        <span class="logo-text">FocusWebCam</span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>FocusWebCam | Ethical AI Focus Detection</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lusitana:wght@400;700&family=Kameron:wght@400;600;700&family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- MediaPipe FaceMesh -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <!-- ══════════════════════════════════════════
+       LANDING PAGE
+  ══════════════════════════════════════════ -->
+    <div id="landingPage" class="page page-landing active">
+      <div class="landing-bg">
+        <div class="landing-bg-gradient"></div>
+        <div class="landing-bg-blob blob1"></div>
+        <div class="landing-bg-blob blob2"></div>
+        <div class="landing-bg-blob blob3"></div>
       </div>
-      <div class="header-status" id="headerStatus">INISIALISASI...</div>
-    </header>
 
-    <!-- Main layout -->
-    <main class="main-layout">
+      <!-- Decorative hex grid bg -->
+      <div class="hex-pattern"></div>
 
-      <!-- Kiri: Kamera -->
-      <section class="camera-section">
-        <div class="camera-frame" id="cameraFrame">
-          <video id="webcam" autoplay playsinline muted></video>
-          <canvas id="overlayCanvas"></canvas>
-
-          <!-- Sudut dekoratif -->
-          <div class="corner tl"></div>
-          <div class="corner tr"></div>
-          <div class="corner bl"></div>
-          <div class="corner br"></div>
-
-          <!-- Status wajah -->
-          <div class="face-status" id="faceStatus">Menunggu wajah...</div>
+      <div class="landing-content">
+        <div class="landing-text">
+          <p class="landing-welcome">Welcome to</p>
+          <h1 class="landing-title">
+            <span class="dot-pulse"></span>
+            FocusWebCam
+          </h1>
+          <p class="landing-subtitle">
+            Your Personal AI Companion for Unstoppable Focus.
+          </p>
         </div>
 
-        <!-- Tombol start/stop -->
-        <button class="btn-start" id="btnStart">MULAI SESI</button>
-      </section>
-
-      <!-- Kanan: Panel info -->
-      <section class="info-section">
-
-        <!-- Focus Score -->
-        <div class="score-card">
-          <div class="score-label">FOCUS SCORE</div>
-          <div class="score-display">
-            <span class="score-number" id="scoreNumber">--</span>
-            <span class="score-unit">/100</span>
-          </div>
-          <div class="score-bar-track">
-            <div class="score-bar-fill" id="scoreBarFill"></div>
-          </div>
-          <div class="score-state" id="scoreState">—</div>
-        </div>
-
-        <!-- Tiga fitur -->
-        <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon">👁</div>
-            <div class="feature-name">EAR (Mata)</div>
-            <div class="feature-value" id="earValue">—</div>
-            <div class="feature-bar-track">
-              <div class="feature-bar-fill" id="earBar"></div>
-            </div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">↔</div>
-            <div class="feature-name">HEAD POSE</div>
-            <div class="feature-value" id="headValue">—</div>
-            <div class="feature-bar-track">
-              <div class="feature-bar-fill" id="headBar"></div>
-            </div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">💬</div>
-            <div class="feature-name">MOUTH RATIO</div>
-            <div class="feature-value" id="mouthValue">—</div>
-            <div class="feature-bar-track">
-              <div class="feature-bar-fill" id="mouthBar"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Session stats -->
-        <div class="stats-card">
-          <div class="stats-title">SESI INI</div>
-          <div class="stats-grid">
-            <div class="stat-item">
-              <div class="stat-value" id="statDuration">00:00</div>
-              <div class="stat-label">Durasi</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="statAvg">--</div>
-              <div class="stat-label">Rata-rata</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="statFocusTime">--%</div>
-              <div class="stat-label">Waktu Fokus</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-value" id="statAlerts">0</div>
-              <div class="stat-label">Alert</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Mini log -->
-        <div class="log-card">
-          <div class="log-title">LOG AKTIVITAS</div>
-          <div class="log-list" id="logList">
-            <div class="log-item log-system">— Sistem siap —</div>
-          </div>
-        </div>
-
-      </section>
-    </main>
-  </div>
-
-  <!-- Toast notifikasi -->
-  <div class="toast" id="toast">
-    <div class="toast-icon">⚠</div>
-    <div class="toast-content">
-      <div class="toast-title">Fokus Menurun!</div>
-      <div class="toast-msg" id="toastMsg">Skor rendah selama 5 detik</div>
+        <button class="landing-cta" id="btnGetStarted">
+          <span class="cta-text">Let's get started</span>
+          <span class="cta-arrow">&#8594;</span>
+        </button>
+      </div>
     </div>
-  </div>
 
-  <!-- Scripts -->
-  <script src="ethical_guardrails.js"></script>
-  <script src="focus.js"></script>
-</body>
+    <!-- ══════════════════════════════════════════
+       MAIN APP PAGE
+  ══════════════════════════════════════════ -->
+    <div id="appPage" class="page page-app">
+      <!-- Background -->
+      <div class="app-bg">
+        <div class="app-bg-gradient"></div>
+        <div class="app-bg-blob blob1"></div>
+        <div class="app-bg-blob blob2"></div>
+      </div>
+
+      <div class="app-wrapper">
+        <!-- Header -->
+        <header class="header">
+          <div class="logo">
+            <span class="logo-dot"></span>
+            <span class="logo-text">FocusWebCam</span>
+          </div>
+          <div class="header-status" id="headerStatus">INISIALISASI...</div>
+        </header>
+
+        <!-- Main layout -->
+        <main class="main-layout">
+          <!-- Kiri: Kamera -->
+          <section class="camera-section">
+            <div class="camera-frame" id="cameraFrame">
+              <video id="webcam" autoplay playsinline muted></video>
+              <canvas id="overlayCanvas"></canvas>
+              <div class="corner tl"></div>
+              <div class="corner tr"></div>
+              <div class="corner bl"></div>
+              <div class="corner br"></div>
+              <div class="face-status" id="faceStatus">
+                Press START SESSION button the after camera on
+              </div>
+            </div>
+            <button class="btn-start" id="btnStart">Start Session</button>
+          </section>
+
+          <!-- Kanan: Panel info -->
+          <section class="info-section">
+            <!-- Focus Score -->
+            <div class="score-card">
+              <div class="score-label">Focus Score</div>
+              <div class="score-display">
+                <span class="score-number" id="scoreNumber">--</span>
+                <span class="score-unit">/100</span>
+              </div>
+              <div class="score-bar-track">
+                <div class="score-bar-fill" id="scoreBarFill"></div>
+              </div>
+              <div class="score-state" id="scoreState">-</div>
+            </div>
+
+            <!-- Tiga fitur -->
+            <div class="features-grid">
+              <div class="feature-card">
+                <div class="feature-icon">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"
+                    />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </div>
+                <div class="feature-name">Eye Aspect Ratio</div>
+                <div class="feature-value" id="earValue">-</div>
+                <div class="feature-bar-track">
+                  <div class="feature-bar-fill" id="earBar"></div>
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+                    <path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+                  </svg>
+                </div>
+                <div class="feature-name">Head Pose</div>
+                <div class="feature-value" id="headValue">-</div>
+                <div class="feature-bar-track">
+                  <div class="feature-bar-fill" id="headBar"></div>
+                </div>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M4 12c2 3 5 5 8 5s6-2 8-5c-2-3-5-5-8-5s-6 2-8 5z"
+                    />
+                  </svg>
+                </div>
+                <div class="feature-name">Mouth Ratio</div>
+                <div class="feature-value" id="mouthValue">-</div>
+                <div class="feature-bar-track">
+                  <div class="feature-bar-fill" id="mouthBar"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Session stats -->
+            <div class="stats-card">
+              <div class="stats-title">Current Session</div>
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <div class="stat-value" id="statDuration">00:00:00</div>
+                  <div class="stat-label">Duration</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value" id="statAvg">- -</div>
+                  <div class="stat-label">Average</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value" id="statFocusTime">- -%</div>
+                  <div class="stat-label">Focus</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value" id="statAlerts">0</div>
+                  <div class="stat-label">Alert</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Log -->
+            <div class="log-card">
+              <div class="log-title">Log Activity</div>
+              <div class="log-list" id="logList">
+                <div class="log-item log-system">- Sistem siap -</div>
+              </div>
+            </div>
+
+            <button id="btnBack" class="btn-back">← Back</button>
+          </section>
+        </main>
+      </div>
+
+      <!-- Toast notifikasi -->
+      <div class="toast" id="toast">
+        <div class="toast-icon">&#9888;</div>
+        <div class="toast-content">
+          <div class="toast-title">Fokus Menurun!</div>
+          <div class="toast-msg" id="toastMsg">Skor rendah selama 5 detik</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+     POPUP: EXIT CONFIRMATION
+══════════════════════════════════════════ -->
+    <div id="exitPopup" class="popup-overlay" style="display: none">
+      <div class="popup-card">
+        <div class="popup-privacy-icon">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="15" fill="#E05252" opacity="0.15" />
+            <circle cx="18" cy="18" r="15" stroke="#E05252" stroke-width="2" />
+            <text
+              x="18"
+              y="23"
+              text-anchor="middle"
+              font-size="16"
+              fill="#E05252"
+              font-weight="bold"
+            >
+              ?
+            </text>
+          </svg>
+        </div>
+
+        <h3 class="popup-title">Leave Focus Session?</h3>
+
+        <p class="popup-body">
+          Your current focus monitoring session will be closed. Are you sure you
+          want to return to the home page?
+        </p>
+
+        <p class="popup-footer-text">
+          Any unsaved session progress may be lost.
+        </p>
+
+        <div class="popup-buttons">
+          <button class="btn-deny" id="btnStay">Stay Here</button>
+
+          <button class="btn-allow" id="btnLeave">Leave</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+     POPUP: FACE NOT DETECTED
+══════════════════════════════════════════ -->
+    <div id="faceWarningPopup" class="popup-overlay" style="display: none">
+      <div class="popup-card">
+        <div class="popup-privacy-icon">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="15" fill="#E8A020" opacity="0.15" />
+            <circle cx="18" cy="18" r="15" stroke="#E8A020" stroke-width="2" />
+            <text
+              x="18"
+              y="23"
+              text-anchor="middle"
+              font-size="16"
+              fill="#E8A020"
+              font-weight="bold"
+            >
+              !
+            </text>
+          </svg>
+        </div>
+
+        <h3 class="popup-title">Face Not Detected</h3>
+
+        <p class="popup-body">
+          We are unable to detect your face in the camera view. Please make sure
+          your face is visible and properly positioned in front of the camera.
+        </p>
+
+        <p class="popup-footer-text">
+          Focus monitoring will continue once you confirm and return to the
+          camera.
+        </p>
+
+        <div class="popup-buttons">
+          <button class="btn-allow" id="btnFaceConfirm">
+            Return to Camera
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+       POPUP: PRIVACY AGREEMENT
+  ══════════════════════════════════════════ -->
+    <div id="privacyPopup" class="popup-overlay" style="display: none">
+      <div class="popup-card popup-privacy">
+        <div class="popup-privacy-icon">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <path
+              d="M18 3L4 9v9c0 8.28 5.92 16.02 14 18 8.08-1.98 14-9.72 14-18V9L18 3z"
+              fill="#E8A020"
+              opacity="0.18"
+            />
+            <path
+              d="M18 3L4 9v9c0 8.28 5.92 16.02 14 18 8.08-1.98 14-9.72 14-18V9L18 3z"
+              stroke="#E8A020"
+              stroke-width="2"
+              fill="none"
+            />
+            <text
+              x="18"
+              y="23"
+              text-anchor="middle"
+              font-size="14"
+              fill="#E8A020"
+              font-weight="bold"
+            >
+              i
+            </text>
+          </svg>
+        </div>
+        <h3 class="popup-title">Privacy Agreement</h3>
+        <p class="popup-body">
+          To help you track your focus levels accurately, FocusWebCam needs to
+          analyze your facial data through your camera. But don't worry, your
+          privacy is our number one priority! Here is our safety guarantee to
+          you:
+        </p>
+        <ul class="popup-list">
+          <li>
+            <span class="check">&#10003;</span>
+            <strong>100% Local Processing:</strong> All facial analysis happens
+            directly on your device right now. No data ever leaves your laptop
+            or phone.
+          </li>
+          <li>
+            <span class="check">&#10003;</span>
+            <strong>No Video Streams Sent Anywhere:</strong> We absolutely do
+            not stream, upload, or save your video recordings to any external
+            servers. What happens in your room, stays on your device.
+          </li>
+          <li>
+            <span class="check">&#10003;</span>
+            <strong>Only Session Scores Saved:</strong> The system only records
+            your aggregate focus scores (the final stats) during this active
+            session for your own progress tracking.
+          </li>
+        </ul>
+        <p class="popup-footer-text">
+          Sounds good, right? Let's grant access and get started!
+        </p>
+        <div class="popup-buttons">
+          <button class="btn-allow" id="btnAllow">Allow</button>
+          <button class="btn-deny" id="btnDeny">Deny</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+       POPUP: SESSION COMPLETE
+  ══════════════════════════════════════════ -->
+    <div id="sessionCompletePopup" class="popup-overlay" style="display: none">
+      <div class="popup-card popup-session">
+        <div class="session-confetti" id="confettiArea"></div>
+        <div class="session-icon">&#127881;</div>
+        <h3 class="popup-title">Session Complete!</h3>
+        <p class="popup-body">
+          <strong>Amazing job!</strong> You made it to the end of your
+          session.<br />
+          Taking control of your time and focus isn't easy, but you just did it.
+          Every minute you spent here is a step closer to your goals.
+        </p>
+        <div class="session-summary">
+          <p class="summary-label">Your Session Summary:</p>
+          <ul class="summary-list">
+            <li>Total Duration: <span id="summaryDuration">- mins</span></li>
+            <li>Average Focus: <span id="summaryAvg">[00]%</span></li>
+            <li>Alerts Triggered: <span id="summaryAlerts">[0] times</span></li>
+          </ul>
+        </div>
+        <p class="session-encouragement">
+          Proud of your progress today. Rest your eyes for a bit, grab a drink,
+          and we'll see you in the next session!
+        </p>
+        <button class="btn-new-session" id="btnNewSession">
+          Start new session
+        </button>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="ethical_guardrails.js"></script>
+    <script src="focus.js"></script>
+    <script src="app.js"></script>
+  </body>
 </html>
