@@ -610,26 +610,29 @@ div[data-testid="stVideo"] { border-radius: 6px !important; overflow:hidden; }
   font-size: clamp(1rem, 1.8vw, 1.5rem);
   color: #4a6075;
 }
-/* CTA button — styled like Figma bottom-right CTA */
-.cta-btn .stButton > button {
-  background: transparent !important;
+/* CTA button — styled like Figma bottom-right CTA */.stButton > button {
+  background: #3a8c52 !important;
   border: none !important;
-  box-shadow: none !important;
-  width: auto !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  color: var(--land-dark) !important;
-  font-family: var(--font-lusi) !important;
-  font-size: 1.3rem !important;
+  color: white !important;
+
+  font-family: var(--font-kame) !important;
+  font-size: 1.5rem !important;
   font-weight: 700 !important;
-  letter-spacing: 0.01em !important;
-  padding: 10px 16px !important;
-  border-radius: 50px !important;
-  transition: color 0.2s, background 0.2s !important;
+
+  padding: 24px 50px !important;
+  min-width: 200px !important;
+  min-height: 80px !important;
+
+  border-radius: 60px !important;
+
+  box-shadow: 0 10px 25px rgba(58,140,82,.25);
+  transition: all .25s ease;
 }
-.cta-btn .stButton > button:hover {
-  background: rgba(26,36,51,0.08) !important;
-  color: #243550 !important;
+
+.stButton > button:hover {
+  background: #2f7344 !important;
+  color: white !important;
+  transform: translateY(-3px);
 }
 
 /* ══════════════════
@@ -647,10 +650,17 @@ div[data-testid="stVideo"] { border-radius: 6px !important; overflow:hidden; }
   border: none !important;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
   color: #dce8f0 !important;
-  padding: 32px 36px !important;
+
+  width: 850px !important;
+  max-width: 85vw !important;
+
+  padding: 20px 40px !important;
 }
 [role="dialog"] p, [role="dialog"] div {
   color: #dce8f0 !important;
+}
+[role="dialog"] h1 {
+  display: none !important;
 }
 [role="dialog"] h1,[role="dialog"] h2,[role="dialog"] h3 {
   font-family: var(--font-kame) !important;
@@ -686,16 +696,18 @@ div[data-testid="stVideo"] { border-radius: 6px !important; overflow:hidden; }
 
 /* Popup text styling */
 .popup-body {
-  font-family: var(--font-lusi);
-  font-size: 0.9rem;
-  color: #b0c4d8;
-  line-height: 1.65;
-  margin-bottom: 14px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin-bottom: 10px;
 }
-.popup-list {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 14px;
+
+.popup-list li {
+  margin-bottom: 5px;
+  line-height: 1.35;
+}
+
+.popup-footer {
+  margin-bottom: 12px;
 }
 .popup-list li {
   font-family: var(--font-lusi);
@@ -733,6 +745,26 @@ div[data-testid="stVideo"] { border-radius: 6px !important; overflow:hidden; }
   margin-bottom: 4px;
 }
 .summary-li span { color:#f0f6fc; font-weight:700; }
+
+.stButton > button {
+    background: #3a8c52 !important;
+    border: 1px solid #3a8c52 !important;
+    color: white !important;
+}
+
+.allow-btn .stButton > button:hover {
+    background: #2f7344 !important;
+}
+
+.deny-btn .stButton > button {
+    background: #c0392b !important;
+    border: 1px solid #c0392b !important;
+    color: white !important;
+}
+
+.deny-btn .stButton > button:hover {
+    background: #a93226 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -775,16 +807,28 @@ if st.session_state.page == "landing":
 if not st.session_state.consent_asked:
     @st.dialog("Privacy Agreement")
     def _consent():
+        
         st.markdown("""
-        <div style="margin-bottom:14px;">
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-            <path d="M18 3L4 9v9c0 8.28 5.92 16.02 14 18 8.08-1.98 14-9.72 14-18V9L18 3z"
-              fill="#E8A020" opacity="0.18"/>
-            <path d="M18 3L4 9v9c0 8.28 5.92 16.02 14 18 8.08-1.98 14-9.72 14-18V9L18 3z"
-              stroke="#E8A020" stroke-width="2" fill="none"/>
-            <text x="18" y="23" text-anchor="middle" font-size="14" fill="#E8A020" font-weight="bold">i</text>
-          </svg>
-        </div>
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px;">
+          <svg width="42" height="42" viewBox="0 0 36 36" fill="none">
+    <path d="M18 3L4 9v9c0 8.28 5.92 16.02 14 18 8.08-1.98 14-9.72 14-18V9L18 3z"
+      fill="#E8A020" opacity="0.18"/>
+    <path d="M18 3L4 9v9c0 8.28 5.92 16.02 14 18 8.08-1.98 14-9.72 14-18V9L18 3z"
+      stroke="#E8A020" stroke-width="2" fill="none"/>
+    <text x="18" y="23" text-anchor="middle"
+      font-size="14" fill="#E8A020" font-weight="bold">i</text>
+  </svg>
+
+  <div style="
+      font-family: var(--font-kame);
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #f0f6fc;
+  ">
+      Privacy Agreement
+  </div>
+
+</div>
         <p class="popup-body">
           To help you track your focus levels accurately, FocusWebCam needs to analyze your facial
           data through your camera. But don't worry, your privacy is our number one priority!
@@ -808,12 +852,14 @@ if not st.session_state.consent_asked:
 
         c1, c2 = st.columns(2)
         with c1:
+            st.markdown('<div class="allow-btn">', unsafe_allow_html=True)
             if st.button("Allow", use_container_width=True, key="btn_allow"):
                 st.session_state.consent_given = True
                 st.session_state.consent_asked = True
                 st.session_state.log_entries.insert(0, ("focus", "✓ Privacy consent granted."))
                 st.rerun()
         with c2:
+            st.markdown('<div class="deny-btn">', unsafe_allow_html=True)
             if st.button("Deny", use_container_width=True, key="btn_deny"):
                 st.session_state.consent_given = False
                 st.session_state.consent_asked = True
