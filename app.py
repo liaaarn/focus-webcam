@@ -1,13 +1,5 @@
 """
-FocusWebCam — Streamlit App
-============================
-Menggunakan streamlit-webrtc untuk akses kamera real-time,
-MediaPipe FaceMesh untuk deteksi wajah, dan model Logistic
-Regression yang sudah dilatih (focus_model.pkl).
-
-Cara jalankan:
-  pip install streamlit streamlit-webrtc av opencv-python-headless mediapipe scikit-learn
-  streamlit run app.py
+FocusWebCam — Streamlit App (Fixed)
 """
 
 import streamlit as st
@@ -21,9 +13,6 @@ from datetime import datetime
 import av
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 
-# ─────────────────────────────────────────────
-# Page config
-# ─────────────────────────────────────────────
 st.set_page_config(
     page_title="FocusWebCam | Ethical AI Focus Detection",
     page_icon="🎯",
@@ -56,10 +45,8 @@ MODEL_SCALER = {
 ALERT_THRESHOLD  = 40
 SMOOTHING_WINDOW = 3
 
-# ─────────────────────────────────────────────
-# Feature helpers
-# ─────────────────────────────────────────────
 MOUTH_MAX_REALISTIC = 0.12
+
 def calc_ear(lm, indices, w, h):
     pts = [(lm[i].x * w, lm[i].y * h) for i in indices]
     A = np.hypot(pts[1][0]-pts[5][0], pts[1][1]-pts[5][1])
@@ -85,24 +72,6 @@ def calc_mouth(lm, w, h):
     ratio = vertical / horizontal if horizontal else 0.0
     return min(ratio, MOUTH_MAX_REALISTIC)
 
-def predict_probability(ear, head_pose, mouth):
-    mouth = min(mouth, MOUTH_MAX_REALISTIC)  # ← batasi mouth
-    
-    ear_s   = standardize(ear, **MODEL_SCALER["ear"])
-    head_s  = standardize(head_pose, **MODEL_SCALER["head_pose"])
-    mouth_s = standardize(mouth, **MODEL_SCALER["mouth_ratio"])
-    
-    # Clamp semua nilai
-    ear_s = max(-3, min(3, ear_s))
-    head_s = max(-3, min(3, head_s))
-    mouth_s = max(-3, min(3, mouth_s))
-    
-    logit = (MODEL_COEF["ear"] * ear_s +
-             MODEL_COEF["head_pose"] * head_s +
-             MODEL_COEF["mouth_ratio"] * mouth_s +
-             MODEL_INTERCEPT)
-    return float(sigmoid(logit))
-
 def standardize(v, mean, std):
     return (v - mean) / std if std else 0.0
 
@@ -110,13 +79,17 @@ def sigmoid(z):
     return 1.0 / (1.0 + np.exp(-z))
 
 def predict_probability(ear, head_pose, mouth):
-    ear_s   = standardize(ear,       **MODEL_SCALER["ear"])
+    mouth = min(mouth, MOUTH_MAX_REALISTIC)
+    ear_s   = standardize(ear, **MODEL_SCALER["ear"])
     head_s  = standardize(head_pose, **MODEL_SCALER["head_pose"])
-    mouth_s = standardize(mouth,     **MODEL_SCALER["mouth_ratio"])
-    logit   = (MODEL_COEF["ear"]        * ear_s  +
-               MODEL_COEF["head_pose"]  * head_s +
-               MODEL_COEF["mouth_ratio"]* mouth_s +
-               MODEL_INTERCEPT)
+    mouth_s = standardize(mouth, **MODEL_SCALER["mouth_ratio"])
+    ear_s = max(-3, min(3, ear_s))
+    head_s = max(-3, min(3, head_s))
+    mouth_s = max(-3, min(3, mouth_s))
+    logit = (MODEL_COEF["ear"] * ear_s +
+             MODEL_COEF["head_pose"] * head_s +
+             MODEL_COEF["mouth_ratio"] * mouth_s +
+             MODEL_INTERCEPT)
     return float(sigmoid(logit))
 
 def get_cv_color(score):
@@ -139,10 +112,10 @@ def explain_score(ear, head, mouth, score):
         return f"Tidak fokus ({score}/100) — {isu}"
 
 # ─────────────────────────────────────────────
-# Queue
+# Queue Initialization
 # ─────────────────────────────────────────────
 if "result_queue" not in st.session_state:
-    st.session_state.result_queue = queue.Queue(maxsize=5)
+    st.session_state.result_queue = queue.Queue(maxsize=10)
 result_queue: queue.Queue = st.session_state.result_queue
 
 # ─────────────────────────────────────────────
@@ -150,7 +123,7 @@ result_queue: queue.Queue = st.session_state.result_queue
 # ─────────────────────────────────────────────
 def init_state():
     defaults = {
-        "page":             "landing",   # landing | app
+        "page":             "landing",
         "session_active":   False,
         "session_start":    None,
         "score_history":    [],
@@ -211,6 +184,7 @@ class FocusVideoProcessor:
             data = {"face": True, "score": score,
                     "ear": round(ear,4), "head": round(head,4),
                     "mouth": round(mouth,4), "expl": expl}
+
             try:
                 result_queue.put_nowait(data)
             except queue.Full:
@@ -219,7 +193,6 @@ class FocusVideoProcessor:
                 try:    result_queue.put_nowait(data)
                 except: pass
 
-            # Draw overlay on video
             for idx in LEFT_EYE + RIGHT_EYE:
                 pt = lm[idx]
                 cv2.circle(img, (int(pt.x*w), int(pt.y*h)), 2, color, -1)
@@ -229,7 +202,6 @@ class FocusVideoProcessor:
                 (int(fl.x*w), int(ft.y*h)),
                 (int(fr.x*w), int(fb.y*h)), color, 1)
 
-            # HUD panel
             overlay = img.copy()
             cv2.rectangle(overlay, (10,10), (215,100), (240,245,250), -1)
             cv2.addWeighted(overlay, 0.75, img, 0.25, 0, img)
@@ -243,7 +215,6 @@ class FocusVideoProcessor:
             cv2.rectangle(img,(18,82),(206,92),(200,215,225),-1)
             cv2.rectangle(img,(18,82),(18+bar_w,92),color,-1)
 
-            # Corner markers
             sz, t = 14, 2
             pts = [(int(fl.x*w), int(ft.y*h)), (int(fr.x*w), int(ft.y*h)),
                    (int(fl.x*w), int(fb.y*h)), (int(fr.x*w), int(fb.y*h))]
@@ -277,6 +248,7 @@ def drain_queue():
             latest = result_queue.get_nowait()
         except queue.Empty:
             break
+
     if latest is None:
         return False
 
@@ -290,10 +262,12 @@ def drain_queue():
     if st.session_state.session_active:
         score = latest["score"]
         st.session_state.score_history.append(score)
-        if score < ALERT_THRESHOLD:
+
+        if score < ALERT_THRESHOLD and latest["face"]:
             st.session_state.low_score_count += 1
         else:
             st.session_state.low_score_count = 0
+
         now = time.time()
         if (st.session_state.low_score_count >= 5 and
                 now - st.session_state.last_alert_time >= 30):
@@ -302,7 +276,8 @@ def drain_queue():
             st.session_state.low_score_count = 0
             ts = datetime.now().strftime("%H:%M:%S")
             st.session_state.log_entries.insert(
-                0, ("alert", f"⚠ [{ts}] Alert #{st.session_state.alert_count} — skor {score}"))
+                0, ("alert", f"⚠️ [{ts}] Alert #{st.session_state.alert_count} — skor {score}"))
+            st.toast(f"⚠️ Fokus menurun! Skor Anda: {score}", icon="🚨")
     return True
 
 # ═══════════════════════════════════════════════════════════════
@@ -343,38 +318,106 @@ html, body,
 #MainMenu, footer,
 [data-testid="stSidebar"] { display:none !important; }
 
-/* Remove default padding */
-.stMainBlockContainer { padding: 0 !important; max-width: 100% !important; }
-[data-testid="block-container"] { padding: 0 !important; }
+.stMainBlockContainer,
+[data-testid="block-container"],
+[data-testid="stMainBlockContainer"] {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  max-width: 100% !important;
+}
+
+[data-testid="block-container"] > div:first-child {
+  padding: 0 !important;
+}
+
+/* ── Header ── */
+.fwc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(30,45,64,0.15);
+  padding: 16px 48px 12px 48px;
+  margin-bottom: 0;
+  background: transparent;
+  width: 100%;
+  box-sizing: border-box;
+}
+.fwc-logo { display:flex; align-items:center; gap:10px; }
+.logo-dot {
+  width: 18px; height: 18px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(58,140,82,0.6);
+  animation: ldpulse 2s infinite;
+  flex-shrink: 0;
+}
+@keyframes ldpulse {
+  0%,100% { opacity:1; box-shadow:0 0 10px rgba(58,140,82,0.6); }
+  50% { opacity:.4; box-shadow:0 0 4px rgba(58,140,82,0.2); }
+}
+.logo-text {
+  font-family: var(--font-kame);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--land-dark);
+}
+.hdr-status {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Layout ── */
+[data-testid="stHorizontalBlock"] {
+  padding-left: 48px !important;
+  padding-right: 48px !important;
+  padding-top: 24px !important;
+  gap: 24px !important;
+}
+
+[data-testid="stColumn"] {
+  padding: 0 !important;
+}
 
 /* ── Buttons ── */
-.stButton > button {
+.main-btn-container .stButton > button {
   font-family: var(--font-kame) !important;
-  font-size: 1.1rem !important;
+  font-size: 1.05rem !important;
   font-weight: 600 !important;
   letter-spacing: 0.04em !important;
-  border-radius: 6px !important;
-  padding: 11px 0 !important;
+  border-radius: 5px !important;
+  padding: 10px 0 !important;
   width: 100% !important;
+  background: transparent !important;
   transition: all 0.22s ease !important;
 }
-/* Default = green start */
-.stButton > button {
-  background: transparent !important;
-  border: 1.5px solid var(--green) !important;
+.btn-start-box .stButton > button {
+  border: 2px solid var(--green) !important;
   color: var(--green) !important;
 }
-.stButton > button:hover {
+.btn-start-box .stButton > button:hover {
   background: var(--green) !important;
   color: #fff !important;
 }
-/* Stop button wrapper */
-.focusbtn-stop .stButton > button {
-  border-color: var(--red) !important;
+.btn-stop-box .stButton > button {
+  border: 2px solid var(--red) !important;
   color: var(--red) !important;
 }
-.focusbtn-stop .stButton > button:hover {
+.btn-stop-box .stButton > button:hover {
   background: var(--red) !important;
+  color: #fff !important;
+}
+.btn-back-box .stButton > button {
+  border: 2px solid var(--land-dark) !important;
+  color: var(--land-dark) !important;
+}
+.btn-back-box .stButton > button:hover {
+  background: var(--land-dark) !important;
   color: #fff !important;
 }
 
@@ -391,7 +434,7 @@ html, body,
 /* ── Score card ── */
 .score-label {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--text-dim);
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -423,7 +466,7 @@ html, body,
 }
 .score-state {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   color: var(--text-dim);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -461,7 +504,7 @@ html, body,
 /* ── Stats card ── */
 .stats-title, .log-title {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   color: var(--text-dim);
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -477,7 +520,7 @@ html, body,
 }
 .stat-lbl {
   font-family: var(--font-mono);
-  font-size: 0.46rem;
+  font-size: 0.44rem;
   color: var(--text-mid);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -495,66 +538,12 @@ html, body,
 .log-focus { color: var(--green) !important; }
 .log-system { color: var(--text-mid) !important; font-style: italic; }
 
-/* ── Header ── */
-.fwc-header {
-  display:flex; align-items:center; justify-content:space-between;
-  border-bottom: 1px solid rgba(30,45,64,0.15);
-  padding: 14px 24px 10px;
-  margin-bottom: 14px;
-}
-.fwc-logo { display:flex; align-items:center; gap:10px; }
-.logo-dot {
-  width:20px; height:20px;
-  background: var(--green);
-  border-radius:50%;
-  box-shadow: 0 0 10px rgba(58,140,82,0.6);
-  animation: ldpulse 2s infinite;
-  flex-shrink:0;
-}
-@keyframes ldpulse {
-  0%,100% { opacity:1; box-shadow:0 0 10px rgba(58,140,82,0.6); }
-  50% { opacity:.4; box-shadow:0 0 4px rgba(58,140,82,0.2); }
-}
-.logo-text {
-  font-family: var(--font-kame);
-  font-size: 1.6rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--land-dark);
-}
-.hdr-status {
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  color: var(--text-dim);
-  letter-spacing: 0.12em;
-}
-
 /* ── Camera area ── */
-.cam-hint {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--text-dim);
-  text-align: center;
-  padding: 6px 0 2px;
-  letter-spacing: 0.06em;
-}
-/* WebRTC component */
 div[data-testid="stVideo"] { border-radius: 6px !important; overflow:hidden; }
-
-/* ── Privacy note ── */
-.privacy-note {
-  font-family: var(--font-mono);
-  font-size: 0.48rem;
-  color: var(--text-mid);
-  text-align: center;
-  padding: 8px 0 4px;
-  letter-spacing: 0.06em;
-}
 
 /* ══════════════════
    LANDING PAGE
 ══════════════════ */
-/* Full-screen background layer (behind Streamlit content) */
 .landing-bg-layer {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background: linear-gradient(145deg, #dde8f0 0%, #c8d8e8 40%, #b8cfe0 100%);
@@ -567,28 +556,21 @@ div[data-testid="stVideo"] { border-radius: 6px !important; overflow:hidden; }
   background: radial-gradient(circle, #a8c8e0 0%, #8ab8d8 60%, transparent 100%);
   border-radius:50%; filter:blur(80px); opacity:0.7;
 }
-.landing-bg-layer::after {
-  content:'';
-  position:absolute; bottom:5%; right:15%;
-  width:30vw; height:30vw;
-  background: radial-gradient(circle, #c8d8e8 0%, #b0c8d8 60%, transparent 100%);
-  border-radius:50%; filter:blur(70px); opacity:0.55;
-}
 .landing-text-block {
   position: relative; z-index: 1;
   padding: 10vh 4vw 0 8vw;
 }
 .landing-welcome {
   font-family: var(--font-lusi);
-  font-size: clamp(2.5rem, 5vw, 5rem);
+  font-size: clamp(3.5rem, 6vw, 6rem);
   font-weight: 400;
   color: var(--land-text);
   line-height: 1;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 .landing-brand {
   display: flex; align-items: center; gap: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 .landing-dot {
   width: 38px; height: 38px;
@@ -600,170 +582,97 @@ div[data-testid="stVideo"] { border-radius: 6px !important; overflow:hidden; }
 }
 .landing-title {
   font-family: var(--font-kame);
-  font-size: clamp(2.5rem, 5vw, 5rem);
+  font-size: clamp(3rem, 5.5vw, 5.5rem);
   font-weight: 700;
   color: var(--land-dark);
   line-height: 1;
 }
 .landing-sub {
   font-family: var(--font-lusi);
-  font-size: clamp(1rem, 1.8vw, 1.5rem);
+  font-size: clamp(1.5rem, 2.5vw, 2.2rem);
   color: #4a6075;
 }
-/* CTA button — styled like Figma bottom-right CTA */.stButton > button {
+.cta-btn .stButton > button {
   background: #3a8c52 !important;
   border: none !important;
   color: white !important;
-
   font-family: var(--font-kame) !important;
-  font-size: 1.5rem !important;
+  font-size: 1.2rem !important;
   font-weight: 700 !important;
-
-  padding: 24px 50px !important;
-  min-width: 200px !important;
-  min-height: 80px !important;
-
-  border-radius: 60px !important;
-
-  box-shadow: 0 10px 25px rgba(58,140,82,.25);
+  padding: 14px 36px !important;
+  min-width: 160px !important;
+  min-height: 50px !important;
+  border-radius: 30px !important;
+  box-shadow: 0 6px 15px rgba(58,140,82,.25);
   transition: all .25s ease;
 }
-
-.stButton > button:hover {
+.cta-btn .stButton > button:hover {
   background: #2f7344 !important;
-  color: white !important;
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
 /* ══════════════════
    POPUP / DIALOG
 ══════════════════ */
-/* Style dialogs to look like the HTML design (dark card) */
-[data-testid="stModal"] > div,
-[role="dialog"] > div {
-  background: transparent !important;
-}
-[data-testid="stModal"] [data-testid="stModalContent"],
-[data-baseweb="modal"] > div > div {
+[data-testid="stModalContent"] {
+  max-width: 520px !important;
   background: #1e2b3a !important;
-  border-radius: 14px !important;
-  border: none !important;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
-  color: #dce8f0 !important;
-
-  width: 850px !important;
-  max-width: 85vw !important;
-
-  padding: 20px 40px !important;
+  border-radius: 12px !important;
+  padding: 20px 30px !important;
 }
-[role="dialog"] p, [role="dialog"] div {
-  color: #dce8f0 !important;
-}
-[role="dialog"] h1 {
+[data-testid="stModalHeader"] {
   display: none !important;
 }
-[role="dialog"] h1,[role="dialog"] h2,[role="dialog"] h3 {
-  font-family: var(--font-kame) !important;
-  color: #f0f6fc !important;
-}
-/* Allow/Deny button colors inside dialogs */
-[role="dialog"] .stButton:first-child > button {
-  background: var(--green) !important;
-  border-color: var(--green) !important;
-  color: #fff !important;
-  border-radius: 8px !important;
-}
-[role="dialog"] .stButton:first-child > button:hover {
-  background: #2d7040 !important;
-}
-[role="dialog"] .stButton:last-child > button {
-  background: var(--red) !important;
-  border-color: var(--red) !important;
-  color: #fff !important;
-  border-radius: 8px !important;
-}
-/* New session button = orange */
-.btn-newsession .stButton > button {
-  background: var(--orange) !important;
-  border-color: var(--orange) !important;
-  color: var(--land-dark) !important;
-  font-weight: 700 !important;
-  border-radius: 8px !important;
-}
-.btn-newsession .stButton > button:hover {
-  background: #d49018 !important;
-}
-
-/* Popup text styling */
 .popup-body {
-  font-size: 0.85rem;
-  line-height: 1.45;
-  margin-bottom: 10px;
-}
-
-.popup-list li {
-  margin-bottom: 5px;
-  line-height: 1.35;
-}
-
-.popup-footer {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #dce8f0 !important;
   margin-bottom: 12px;
 }
+.popup-list { list-style: none; padding-left: 0; }
 .popup-list li {
   font-family: var(--font-lusi);
   font-size: 0.84rem;
   color: #b0c4d8;
   line-height: 1.5;
   margin-bottom: 9px;
-  display: flex;
-  gap: 8px;
 }
-.check { color: var(--green); font-weight: 700; flex-shrink:0; }
-.popup-footer {
-  font-family: var(--font-lusi);
-  font-size: 0.84rem;
-  color: #8ca0b4;
-  margin-bottom: 22px;
+.check { color: var(--green); font-weight: 700; margin-right: 6px; }
+.dialog-buttons .allow-btn .stButton > button {
+  background: var(--green) !important;
+  border: 1px solid var(--green) !important;
+  color: white !important;
+  border-radius: 6px !important;
+  padding: 8px 0 !important;
+}
+.dialog-buttons .allow-btn .stButton > button:hover {
+  background: #2f7344 !important;
+}
+.dialog-buttons .deny-btn .stButton > button {
+  background: var(--red) !important;
+  border: 1px solid var(--red) !important;
+  color: white !important;
+  border-radius: 6px !important;
+  padding: 8px 0 !important;
+}
+.dialog-buttons .deny-btn .stButton > button:hover {
+  background: #a93226 !important;
+}
+.btn-newsession .stButton > button {
+  background: var(--orange) !important;
+  border-color: var(--orange) !important;
+  color: var(--land-dark) !important;
+  border-radius: 6px !important;
 }
 .summary-box {
   background: rgba(255,255,255,0.06);
   border-radius: 8px;
-  padding: 14px 16px;
-  margin: 14px 0;
-}
-.summary-label {
-  font-family: var(--font-kame);
-  font-size: 0.84rem;
-  color: #8ca0b4;
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-.summary-li {
-  font-family: var(--font-lusi);
-  font-size: 0.84rem;
-  color: #b0c4d8;
-  margin-bottom: 4px;
-}
-.summary-li span { color:#f0f6fc; font-weight:700; }
-
-.stButton > button {
-    background: #3a8c52 !important;
-    border: 1px solid #3a8c52 !important;
-    color: white !important;
+  padding: 12px 14px;
+  margin: 12px 0;
 }
 
-.allow-btn .stButton > button:hover {
-    background: #2f7344 !important;
-}
-
-.deny-btn .stButton > button {
-    background: #c0392b !important;
-    border: 1px solid #c0392b !important;
-    color: white !important;
-}
-
-.deny-btn .stButton > button:hover {
-    background: #a93226 !important;
+[data-testid="stHorizontalBlock"] {
+  gap: 20px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -772,10 +681,7 @@ div[data-testid="stVideo"] { border-radius: 6px !important; overflow:hidden; }
 # LANDING PAGE
 # ═══════════════════════════════════════════════════════════════
 if st.session_state.page == "landing":
-    # Full-screen background
     st.markdown('<div class="landing-bg-layer"></div>', unsafe_allow_html=True)
-
-    # Main text content
     st.markdown("""
     <div class="landing-text-block">
       <p class="landing-welcome">Welcome to</p>
@@ -786,70 +692,40 @@ if st.session_state.page == "landing":
       <p class="landing-sub">Your Personal AI Companion for Unstoppable Focus.</p>
     </div>
     """, unsafe_allow_html=True)
-
-    # Spacer to push CTA toward bottom
-    st.markdown('<div style="height:35vh;"></div>', unsafe_allow_html=True)
-
-    # CTA row: spacer + button aligned right
-    _sp, _btn_col = st.columns([3, 1])
+    st.markdown('<div style="height:25vh;"></div>', unsafe_allow_html=True)
+    _sp, _btn_col = st.columns([2.5, 1.5])
     with _btn_col:
         st.markdown('<div class="cta-btn">', unsafe_allow_html=True)
-        if st.button("Let's get started  \u2192", key="btn_landing"):
+        if st.button("Let's get started  →", key="btn_landing"):
             st.session_state.page = "app"
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
-
     st.stop()
 
 # ═══════════════════════════════════════════════════════════════
 # PRIVACY AGREEMENT POPUP
 # ═══════════════════════════════════════════════════════════════
 if not st.session_state.consent_asked:
-    @st.dialog("Privacy Agreement")
+    @st.dialog("Privacy")
     def _consent():
-        
         st.markdown("""
-        <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px;">
-          <svg width="42" height="42" viewBox="0 0 36 36" fill="none">
-    <path d="M18 3L4 9v9c0 8.28 5.92 16.02 14 18 8.08-1.98 14-9.72 14-18V9L18 3z"
-      fill="#E8A020" opacity="0.18"/>
-    <path d="M18 3L4 9v9c0 8.28 5.92 16.02 14 18 8.08-1.98 14-9.72 14-18V9L18 3z"
-      stroke="#E8A020" stroke-width="2" fill="none"/>
-    <text x="18" y="23" text-anchor="middle"
-      font-size="14" fill="#E8A020" font-weight="bold">i</text>
-  </svg>
-
-  <div style="
-      font-family: var(--font-kame);
-      font-size: 1.7rem;
-      font-weight: 700;
-      color: #f0f6fc;
-  ">
-      Privacy Agreement
-  </div>
-
-</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px;">
+          <span style="font-size:24px;">🛡️</span>
+          <div style="font-family:var(--font-kame);font-size:1.4rem;font-weight:700;color:#f0f6fc;">
+            Privacy Agreement
+          </div>
+        </div>
         <p class="popup-body">
           To help you track your focus levels accurately, FocusWebCam needs to analyze your facial
-          data through your camera. But don't worry, your privacy is our number one priority!
-          Here is our safety guarantee to you:
+          data through your camera. Here is our safety guarantee to you:
         </p>
         <ul class="popup-list">
-          <li><span class="check">✓</span>
-            <span><strong>100% Local Processing:</strong> All facial analysis happens directly on
-            your device right now. No data ever leaves your laptop or phone.</span></li>
-          <li><span class="check">✓</span>
-            <span><strong>No Video Streams Sent Anywhere:</strong> We absolutely do not stream,
-            upload, or save your video recordings to any external servers. What happens in your
-            room, stays on your device.</span></li>
-          <li><span class="check">✓</span>
-            <span><strong>Only Session Scores Saved:</strong> The system only records your aggregate
-            focus scores (the final stats) during this active session for your own progress
-            tracking.</span></li>
+          <li><span class="check">✓</span><strong>100% Local Processing:</strong> Analysis happens directly on your device.</li>
+          <li><span class="check">✓</span><strong>No Video Streams Sent:</strong> We absolutely do not upload or save your videos.</li>
+          <li><span class="check">✓</span><strong>Only Session Scores Saved:</strong> Only statistical scores are kept for session history.</li>
         </ul>
-        <p class="popup-footer">Sounds good, right? Let's grant access and get started!</p>
         """, unsafe_allow_html=True)
-
+        st.markdown('<div class="dialog-buttons">', unsafe_allow_html=True)
         c1, c2 = st.columns(2)
         with c1:
             st.markdown('<div class="allow-btn">', unsafe_allow_html=True)
@@ -858,6 +734,7 @@ if not st.session_state.consent_asked:
                 st.session_state.consent_asked = True
                 st.session_state.log_entries.insert(0, ("focus", "✓ Privacy consent granted."))
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
         with c2:
             st.markdown('<div class="deny-btn">', unsafe_allow_html=True)
             if st.button("Deny", use_container_width=True, key="btn_deny"):
@@ -866,32 +743,26 @@ if not st.session_state.consent_asked:
                 st.session_state.log_entries.insert(0, ("alert", "✗ Privacy consent denied."))
                 st.session_state.page = "landing"
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     _consent()
 
 # ═══════════════════════════════════════════════════════════════
 # SESSION COMPLETE POPUP
 # ═══════════════════════════════════════════════════════════════
 if st.session_state.show_session_complete:
-    @st.dialog("Session Complete!")
+    @st.dialog("Complete")
     def _session_complete():
         sm = st.session_state.session_summary
         st.markdown(f"""
-        <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
-        <p class="popup-body">
-          <strong style="color:#f0f6fc;">Amazing job!</strong> You made it to the end of your session.<br>
-          Taking control of your time and focus isn't easy, but you just did it.
-          Every minute you spent here is a step closer to your goals.
-        </p>
+        <div style="font-size:1.8rem;margin-bottom:6px;">🎉</div>
+        <div style="font-family:var(--font-kame);font-size:1.3rem;font-weight:700;color:#f0f6fc;margin-bottom:10px;">Session Complete!</div>
+        <p class="popup-body">Every minute you spent here is a step closer to your goals.</p>
         <div class="summary-box">
-          <p class="summary-label">Your Session Summary:</p>
-          <p class="summary-li">• Total Duration: <span>{sm.get('duration','—')}</span></p>
-          <p class="summary-li">• Average Focus: <span>{sm.get('avg','—')}/100</span></p>
-          <p class="summary-li">• Alerts Triggered: <span>{sm.get('alerts','0')} times</span></p>
+          <p style="color:#b0c4d8;margin:4px 0;">• Total Duration: <span style="color:#f0f6fc;font-weight:700;">{sm.get('duration','—')}</span></p>
+          <p style="color:#b0c4d8;margin:4px 0;">• Average Focus: <span style="color:#f0f6fc;font-weight:700;">{sm.get('avg','—')}/100</span></p>
+          <p style="color:#b0c4d8;margin:4px 0;">• Alerts Triggered: <span style="color:#f0f6fc;font-weight:700;">{sm.get('alerts','0')} times</span></p>
         </div>
-        <p class="popup-body" style="font-size:.82rem;color:#8ca0b4;">
-          Proud of your progress today. Rest your eyes for a bit, grab a drink,
-          and we'll see you in the next session!
-        </p>
         """, unsafe_allow_html=True)
         st.markdown('<div class="btn-newsession">', unsafe_allow_html=True)
         if st.button("Start new session", use_container_width=True, key="btn_newsession"):
@@ -909,30 +780,25 @@ if st.session_state.show_session_complete:
     _session_complete()
 
 # ═══════════════════════════════════════════════════════════════
-# APP PAGE
+# MAIN APP PAGE
 # ═══════════════════════════════════════════════════════════════
 
-# Background blobs via HTML
+# Background
 st.markdown("""
 <div style="position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;">
   <div style="position:absolute;inset:0;background:linear-gradient(145deg,#d8e6f0 0%,#c4d4e4 50%,#b8ccdc 100%);"></div>
-  <div style="position:absolute;top:-15%;right:-8%;width:45vw;height:45vw;
-    background:radial-gradient(circle,#9cbcd4 0%,#7aaac8 60%,transparent 100%);
-    border-radius:50%;filter:blur(70px);opacity:0.55;"></div>
-  <div style="position:absolute;bottom:10%;right:20%;width:30vw;height:30vw;
-    background:radial-gradient(circle,#c8d8e8 0%,#b0c8d8 60%,transparent 100%);
-    border-radius:50%;filter:blur(70px);opacity:0.55;"></div>
 </div>
 """, unsafe_allow_html=True)
 
-# Header
-if st.session_state.session_active:
-    hdr_status = "SESSION ACTIVE"
-elif st.session_state.consent_given:
-    hdr_status = "READY — LR MODEL"
-else:
-    hdr_status = "LIMITED MODE"
+# Header status
+hdr_status = "SESSION ACTIVE" if st.session_state.session_active else (
+    "READY — LR MODEL" if st.session_state.consent_given else "LIMITED MODE"
+)
 
+# Drain queue
+drain_queue()
+
+# Header
 st.markdown(f"""
 <div class="fwc-header">
   <div class="fwc-logo">
@@ -943,32 +809,28 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Drain queue
-drain_queue()
-
-# ── Layout: Camera | Info
+# ── Layout Kolom ──
 cam_col, info_col = st.columns([3, 2], gap="medium")
 
 with cam_col:
-    # Start / Stop button
+    st.markdown('<div class="main-btn-container">', unsafe_allow_html=True)
+
+    # 1. Tombol Start / End Session (paling atas, lebar penuh)
     if not st.session_state.session_active:
-        if st.button("Start Session", key="btn_start"):
+        st.markdown('<div class="btn-start-box">', unsafe_allow_html=True)
+        if st.button("▶  Start Session", key="btn_start", use_container_width=True):
             st.session_state.session_active  = True
             st.session_state.session_start   = time.time()
             st.session_state.score_history   = []
             st.session_state.alert_count     = 0
             st.session_state.low_score_count = 0
             st.session_state.last_alert_time = 0
-            st.session_state.disp_score      = None
-            st.session_state.disp_ear        = None
-            st.session_state.disp_head       = None
-            st.session_state.disp_mouth      = None
             ts = datetime.now().strftime("%H:%M:%S")
             st.session_state.log_entries.insert(0, ("focus", f"🎯 [{ts}] Session started"))
-            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="focusbtn-stop">', unsafe_allow_html=True)
-        if st.button("End Session", key="btn_stop"):
+        st.markdown('<div class="btn-stop-box">', unsafe_allow_html=True)
+        if st.button("⏹  End Session", key="btn_stop", use_container_width=True):
             hist = st.session_state.score_history
             avg  = round(sum(hist)/len(hist)) if hist else 0
             pct  = round(sum(1 for s in hist if s >= ALERT_THRESHOLD)/len(hist)*100) if hist else 0
@@ -982,12 +844,12 @@ with cam_col:
                 "duration": dur_str, "avg": avg,
                 "focus_pct": pct, "alerts": st.session_state.alert_count
             }
-            st.session_state.session_active     = False
+            st.session_state.session_active        = False
             st.session_state.show_session_complete = True
-            st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # WebRTC
+    # 2. WebRTC kamera (tengah)
+    st.markdown('<div style="margin-top:10px;margin-bottom:8px;">', unsafe_allow_html=True)
     rtc_config = RTCConfiguration(
         {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
     )
@@ -999,20 +861,19 @@ with cam_col:
         media_stream_constraints={"video": {"width": 640, "height": 480}, "audio": False},
         async_processing=True,
     )
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    if not st.session_state.session_active:
-        st.markdown('<p class="cam-hint">Press START SESSION button after the camera is on</p>',
-                    unsafe_allow_html=True)
-
-    # Back to landing
-    st.markdown('<div class="focusbtn-stop" style="margin-top:6px;">', unsafe_allow_html=True)
-    if st.button("← Back to Home", key="btn_back"):
+    # 3. Tombol Back to Home (paling bawah, lebar penuh)
+    st.markdown('<div class="btn-back-box">', unsafe_allow_html=True)
+    if st.button("← Back to Home", key="btn_back", use_container_width=True):
         st.session_state.page = "landing"
         st.session_state.session_active = False
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ── Right panel
+    st.markdown('</div>', unsafe_allow_html=True)  # tutup main-btn-container
+
+# ── Panel Info Kanan ──
 with info_col:
     score = st.session_state.disp_score
     ear   = st.session_state.disp_ear
@@ -1020,7 +881,6 @@ with info_col:
     mouth = st.session_state.disp_mouth
     expl  = st.session_state.disp_expl
 
-    # Score values & colors
     if score is not None:
         if score >= 65:
             sc_color = "#2a7a48"; bar_color = "#3a8c52"; state_txt = "FOCUSED"
@@ -1034,17 +894,15 @@ with info_col:
         sc_color = "#8a9eb0"; bar_color = "#dce8f0"; state_txt = "—"
         sc_disp = "--"; bar_w = 0; score = 0
 
-    # Feature bar widths
     ear_w   = int(min((ear   / 0.4) * 100, 100)) if ear   is not None else 0
     head_w  = int(min((head  / 0.3) * 100, 100)) if head  is not None else 0
     mouth_w = int(min((mouth / 0.15)* 100, 100)) if mouth is not None else 0
-    feat_color = bar_color
 
     ed = f"{ear:.3f}"   if ear   is not None else "—"
     hd = f"{head:.3f}"  if head  is not None else "—"
     md = f"{mouth:.3f}" if mouth is not None else "—"
 
-    # ── Score card
+    # Score Box
     st.markdown(f"""
     <div class="fwc-card">
       <div class="score-label">Focus Score</div>
@@ -1055,41 +913,37 @@ with info_col:
       <div class="score-bar-track">
         <div class="score-bar-fill" style="width:{bar_w}%;background:{bar_color};"></div>
       </div>
-      <div class="score-state" style="color:{sc_color};">{state_txt}</div>
+      <div class="score-state" style="color:{sc_color};">
+        {state_txt} <span style="color:#6a7e92;font-size:11px;">({expl})</span>
+      </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Feature cards
+    # Feature Grid
     st.markdown(f"""
     <div class="feat-grid">
       <div class="feat-card">
-        <div class="feat-icon">👁</div>
-        <div class="feat-name">Eye Aspect Ratio</div>
+        <div class="feat-icon">👁️</div>
+        <div class="feat-name">EAR</div>
         <div class="feat-val">{ed}</div>
-        <div class="feat-bar-track">
-          <div class="feat-bar-fill" style="width:{ear_w}%;background:{feat_color};"></div>
-        </div>
+        <div class="feat-bar-track"><div class="feat-bar-fill" style="width:{ear_w}%;background:{bar_color};"></div></div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">↔</div>
+        <div class="feat-icon">↔️</div>
         <div class="feat-name">Head Pose</div>
         <div class="feat-val">{hd}</div>
-        <div class="feat-bar-track">
-          <div class="feat-bar-fill" style="width:{head_w}%;background:{feat_color};"></div>
-        </div>
+        <div class="feat-bar-track"><div class="feat-bar-fill" style="width:{head_w}%;background:{bar_color};"></div></div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">💬</div>
-        <div class="feat-name">Mouth Ratio</div>
+        <div class="feat-name">Mouth</div>
         <div class="feat-val">{md}</div>
-        <div class="feat-bar-track">
-          <div class="feat-bar-fill" style="width:{mouth_w}%;background:{feat_color};"></div>
-        </div>
+        <div class="feat-bar-track"><div class="feat-bar-fill" style="width:{mouth_w}%;background:{bar_color};"></div></div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Stats card
+    # Statistics Card
     hist = st.session_state.score_history
     avg_s = round(sum(hist)/len(hist)) if hist else 0
     fpct  = round(sum(1 for s in hist if s >= ALERT_THRESHOLD)/len(hist)*100) if hist else 0
@@ -1101,29 +955,17 @@ with info_col:
     <div class="fwc-card">
       <div class="stats-title">Current Session</div>
       <div class="stats-grid">
-        <div>
-          <div class="stat-val">{dur_disp}</div>
-          <div class="stat-lbl">Duration</div>
-        </div>
-        <div>
-          <div class="stat-val">{avg_s if hist else "--"}</div>
-          <div class="stat-lbl">Average</div>
-        </div>
-        <div>
-          <div class="stat-val">{(str(fpct)+"%") if hist else "--%"}</div>
-          <div class="stat-lbl">Focus</div>
-        </div>
-        <div>
-          <div class="stat-val">{st.session_state.alert_count}</div>
-          <div class="stat-lbl">Alert</div>
-        </div>
+        <div><div class="stat-val">{dur_disp}</div><div class="stat-lbl">Duration</div></div>
+        <div><div class="stat-val">{avg_s if hist else "--"}</div><div class="stat-lbl">Average</div></div>
+        <div><div class="stat-val">{(str(fpct)+"%") if hist else "--%"}</div><div class="stat-lbl">Focus</div></div>
+        <div><div class="stat-val" style="color:#c0392b;">{st.session_state.alert_count}</div><div class="stat-lbl">Alert</div></div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Log card
+    # Activity Log
     logs_html = ""
-    for kind, entry in st.session_state.log_entries[:18]:
+    for kind, entry in st.session_state.log_entries[:5]:
         css = "log-alert" if kind == "alert" else ("log-focus" if kind == "focus" else "log-system")
         logs_html += f'<div class="log-item {css}">{entry}</div>'
 
@@ -1134,10 +976,7 @@ with info_col:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="privacy-note">🔒 Data processed locally — never sent to any server</div>',
-                unsafe_allow_html=True)
-
-# ── Auto-refresh while camera active
-if "ctx" in dir() and ctx.state.playing:
-    time.sleep(0.5)
+# ── Auto-rerun hanya saat kamera aktif dan session berjalan ──
+if ctx is not None and ctx.state.playing:
+    time.sleep(0.4)
     st.rerun()
