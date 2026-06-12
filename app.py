@@ -283,6 +283,39 @@ def drain_queue():
 # ═══════════════════════════════════════════════════════════════
 # GLOBAL CSS
 # ═══════════════════════════════════════════════════════════════
+eye_icon = """
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+<path d="M2 12C4.5 7.5 8 5 12 5C16 5 19.5 7.5 22 12C19.5 16.5 16 19 12 19C8 19 4.5 16.5 2 12Z"
+stroke="#3A8C52" stroke-width="2"/>
+<circle cx="12" cy="12" r="3" fill="#3A8C52"/>
+</svg>
+"""
+
+head_icon = """
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+  <circle cx="12" cy="12" r="7"
+          stroke="#3A8C52"
+          stroke-width="2"/>
+  <circle cx="9.5" cy="10" r="0.8"
+          fill="#3A8C52"/>
+  <circle cx="14.5" cy="10" r="0.8"
+          fill="#3A8C52"/>
+  <path d="M10 14C10.8 14.8 13.2 14.8 14 14"
+        stroke="#3A8C52"
+        stroke-width="1.5"
+        stroke-linecap="round"/>
+</svg>
+"""
+
+mouth_icon = """
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+<path d="M5 12C7 15 10 16 12 16C14 16 17 15 19 12"
+stroke="#3A8C52" stroke-width="2.2" stroke-linecap="round"/>
+<path d="M5 12C7 10 10 9 12 9C14 9 17 10 19 12"
+stroke="#3A8C52" stroke-width="2.2" stroke-linecap="round"/>
+</svg>
+"""
+
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Lusitana:wght@400;700&family=Kameron:wght@400;600;700&family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
@@ -921,27 +954,43 @@ with info_col:
 
     # Feature Grid
     st.markdown(f"""
-    <div class="feat-grid">
-      <div class="feat-card">
-        <div class="feat-icon">👁️</div>
-        <div class="feat-name">EAR</div>
-        <div class="feat-val">{ed}</div>
-        <div class="feat-bar-track"><div class="feat-bar-fill" style="width:{ear_w}%;background:{bar_color};"></div></div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">↔️</div>
-        <div class="feat-name">Head Pose</div>
-        <div class="feat-val">{hd}</div>
-        <div class="feat-bar-track"><div class="feat-bar-fill" style="width:{head_w}%;background:{bar_color};"></div></div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">💬</div>
-        <div class="feat-name">Mouth</div>
-        <div class="feat-val">{md}</div>
-        <div class="feat-bar-track"><div class="feat-bar-fill" style="width:{mouth_w}%;background:{bar_color};"></div></div>
+<div class="feat-grid">
+
+  <div class="feat-card">
+    <div class="feat-icon">{eye_icon}</div>
+    <div class="feat-name">EAR</div>
+    <div class="feat-val">{ed}</div>
+    <div class="feat-bar-track">
+      <div class="feat-bar-fill"
+           style="width:{ear_w}%;background:{bar_color};">
       </div>
     </div>
-    """, unsafe_allow_html=True)
+  </div>
+
+  <div class="feat-card">
+    <div class="feat-icon">{head_icon}</div>
+    <div class="feat-name">Head Pose</div>
+    <div class="feat-val">{hd}</div>
+    <div class="feat-bar-track">
+      <div class="feat-bar-fill"
+           style="width:{head_w}%;background:{bar_color};">
+      </div>
+    </div>
+  </div>
+
+  <div class="feat-card">
+    <div class="feat-icon">{mouth_icon}</div>
+    <div class="feat-name">Mouth Ratio</div>
+    <div class="feat-val">{md}</div>
+    <div class="feat-bar-track">
+      <div class="feat-bar-fill"
+           style="width:{mouth_w}%;background:{bar_color};">
+      </div>
+    </div>
+  </div>
+
+</div>
+""", unsafe_allow_html=True)
 
     # Statistics Card
     hist = st.session_state.score_history
