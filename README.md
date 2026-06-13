@@ -35,6 +35,9 @@ Browser akan terbuka otomatis di `http://localhost:8501`
 
 ---
 
+### Link Streamlit 
+'https://focus-webcam.streamlit.app/'
+
 ## Deploy ke Streamlit Cloud
 
 1. Push folder ini ke GitHub
