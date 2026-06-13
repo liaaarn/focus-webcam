@@ -50,9 +50,9 @@ https://focus-webcam.streamlit.app/
 
 ---
 
-## Fitur
+## Features
 
-| Fitur | Deskripsi |
+| Feature | Description |
 |-------|-----------|
 | 🎯 Focus Score | 0–100 score from the Logistic Regression model |
 | 👁 EAR | Eye Aspect Ratio — eye openness |
@@ -64,7 +64,7 @@ https://focus-webcam.streamlit.app/
 
 ---
 
-## Perbedaan vs Versi HTML
+## Comparison vs HTML Version
 
 | Aspek | HTML (localhost) | Streamlit |
 |-------|-----------------|-----------|
