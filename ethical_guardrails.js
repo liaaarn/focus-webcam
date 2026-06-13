@@ -1,16 +1,16 @@
 /**
  * FocusWebCam — Ethical Guardrails Module
  * =========================================
- * Memastikan aplikasi memenuhi standar:
- * - Transparansi (explainability)
- * - Mitigasi Bias
- * - Privasi & Security
+ * Ensures the application meets standards for:
+ * - Transparency (explainability)
+ * - Bias Mitigation
+ * - Privacy & Security
  * - Regulatory Compliance (GDPR)
  * - Human Intervention / Safety Override
  */
 
 // ─────────────────────────────────────────────
-// 1. TRANSPARANSI: Feature Contribution Explanation
+// 1. TRANSPARENCY: Feature Contribution Explanation
 // ─────────────────────────────────────────────
 
 class ExplainabilityEngine {
@@ -19,8 +19,8 @@ class ExplainabilityEngine {
   }
 
   /**
-   * Menghitung kontribusi setiap fitur terhadap prediksi
-   * @returns {Object} Penjelasan mengapa skor fokus rendah/tinggi
+   * Calculates contribution of each feature to the prediction
+   * @returns {Object} Explanation of why focus score is low/high
    */
   explainPrediction(ear, headPose, mouth, probability, score) {
     const contributions = {
@@ -37,35 +37,35 @@ class ExplainabilityEngine {
       ),
     };
 
-    // Cari faktor dominan penyebab rendahnya skor
+    // Find dominant factors causing low score
     const negativeFactors = [];
     const positiveFactors = [];
 
     if (contributions.ear < 0.3)
-      negativeFactors.push("mata tertutup/berkedip berlebihan");
+      negativeFactors.push("eyes closed/excessive blinking");
     if (contributions.head_pose < 0.3)
-      negativeFactors.push("kepala menoleh dari layar");
+      negativeFactors.push("head turned away from screen");
     if (contributions.mouth < 0.3)
-      negativeFactors.push("mulut terbuka (mungkin menguap)");
+      negativeFactors.push("mouth open (possibly yawning)");
 
     if (contributions.ear > 0.7)
-      positiveFactors.push("mata terbuka dengan baik");
+      positiveFactors.push("eyes open well");
     if (contributions.head_pose > 0.7)
-      positiveFactors.push("kepala menghadap layar");
-    if (contributions.mouth > 0.7) positiveFactors.push("mulut tertutup");
+      positiveFactors.push("head facing screen");
+    if (contributions.mouth > 0.7) positiveFactors.push("mouth closed");
 
     let explanation = "";
     let suggestion = "";
 
     if (score < 40) {
-      explanation = `Skor fokus rendah (${score}/100). Faktor utama: ${negativeFactors.join(", ")}.`;
+      explanation = `Low focus score (${score}/100). Main factors: ${negativeFactors.join(", ")}.`;
       suggestion = this._getSuggestion(negativeFactors);
     } else if (score < 65) {
-      explanation = `Skor fokus sedang (${score}/100). ${negativeFactors.length > 0 ? `Perhatikan: ${negativeFactors.join(", ")}.` : "Pertahankan kondisi saat ini."}`;
-      suggestion = "Coba kurangi gerakan kepala dan jaga mata tetap fokus.";
+      explanation = `Moderate focus score (${score}/100). ${negativeFactors.length > 0 ? `Pay attention to: ${negativeFactors.join(", ")}.` : "Maintain current condition."}`;
+      suggestion = "Try to reduce head movements and keep eyes focused.";
     } else {
-      explanation = `Skor fokus baik (${score}/100). ${positiveFactors.join(", ")}.`;
-      suggestion = "Pertahankan!";
+      explanation = `Good focus score (${score}/100). ${positiveFactors.join(", ")}.`;
+      suggestion = "Keep it up!";
     }
 
     return {
@@ -92,24 +92,24 @@ class ExplainabilityEngine {
 
   _getSuggestion(factors) {
     const suggestions = {
-      "mata tertutup/berkedip berlebihan":
-        "Cobalah lebih sering membuka mata dan kurangi kedipan berlebihan.",
-      "kepala menoleh dari layar":
-        "Posisikan kepala menghadap langsung ke layar kamera.",
-      "mulut terbuka (mungkin menguap)":
-        "Coba regangkan tubuh atau minum air untuk mengurangi rasa kantuk.",
+      "eyes closed/excessive blinking":
+        "Try to keep your eyes open more often and reduce excessive blinking.",
+      "head turned away from screen":
+        "Position your head directly facing the camera screen.",
+      "mouth open (possibly yawning)":
+        "Try stretching or drinking water to reduce drowsiness.",
     };
 
-    if (factors.length === 0) return "Terus pertahankan fokus Anda!";
+    if (factors.length === 0) return "Keep maintaining your focus!";
     return (
       suggestions[factors[0]] ||
-      "Jaga posisi tubuh dan kontak mata dengan kamera."
+      "Maintain body posture and eye contact with the camera."
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// 2. MITIGASI BIAS: Fairness Validation
+// 2. BIAS MITIGATION: Fairness Validation
 // ─────────────────────────────────────────────
 
 class BiasMitigation {
@@ -121,17 +121,17 @@ class BiasMitigation {
         min: 0.12,
         max: 0.38,
         warning:
-          "Nilai EAR di luar rentang normal. Pastikan pencahayaan cukup.",
+          "EAR value outside normal range. Ensure adequate lighting.",
       },
       head_pose: {
         min: 0,
         max: 0.28,
-        warning: "Deteksi kepala tidak stabil. Periksa posisi wajah.",
+        warning: "Head detection unstable. Check face position.",
       },
       mouth: {
         min: 0.001,
         max: 0.18,
-        warning: "Deteksi mulut tidak akurat. Periksa pencahayaan.",
+        warning: "Mouth detection inaccurate. Check lighting.",
       },
     };
   }
@@ -203,18 +203,18 @@ class PrivacyGuard {
       modal.className = "consent-modal";
       modal.innerHTML = `
         <div class="consent-content">
-          <h3>📋 Persetujuan Privasi</h3>
-          <p>FocusWebCam memproses data wajah Anda untuk mendeteksi tingkat fokus.</p>
+          <h3>📋 Privacy Consent</h3>
+          <p>FocusWebCam processes your facial data to detect focus levels.</p>
           <ul>
-            <li>✅ Semua data diproses secara <strong>lokal di perangkat Anda</strong></li>
-            <li>✅ Video tidak pernah dikirim ke server manapun</li>
-            <li>✅ Data sesi akan dihapus setelah 24 jam</li>
-            <li>✅ Anda dapat mengekspor atau menghapus data kapan saja</li>
-            <li>✅ Model AI berjalan sepenuhnya di browser Anda</li>
+            <li>✅ All data is processed <strong>locally on your device</strong></li>
+            <li>✅ Video is never sent to any server</li>
+            <li>✅ Session data will be deleted after 24 hours</li>
+            <li>✅ You can export or delete your data at any time</li>
+            <li>✅ AI model runs entirely in your browser</li>
           </ul>
           <div class="consent-buttons">
-            <button id="consentAccept" class="btn-consent accept">Izinkan</button>
-            <button id="consentReject" class="btn-consent reject">Tolak</button>
+            <button id="consentAccept" class="btn-consent accept">Allow</button>
+            <button id="consentReject" class="btn-consent reject">Deny</button>
           </div>
         </div>
       `;
@@ -282,13 +282,13 @@ class PrivacyGuard {
     panel.className = "privacy-panel";
     panel.innerHTML = `
       <div class="privacy-content">
-        <h3>🔒 Kontrol Privasi Anda</h3>
-        <p><strong>Status:</strong> ${this.consentGiven ? "✅ Persetujuan diberikan" : "⚠️ Belum ada persetujuan"}</p>
-        <p><strong>Data tersimpan:</strong> ${this.sessionData.length} sesi</p>
-        <p><small>Data disimpan secara lokal di browser Anda dan akan otomatis dihapus setelah 24 jam.</small></p>
-        <button id="exportDataBtn" class="btn-privacy">📥 Ekspor Data Saya (JSON)</button>
-        <button id="deleteDataBtn" class="btn-privacy danger">🗑️ Hapus Semua Data</button>
-        <button id="closePanelBtn" class="btn-privacy">Tutup</button>
+        <h3>🔒 Your Privacy Control</h3>
+        <p><strong>Status:</strong> ${this.consentGiven ? "✅ Consent given" : "⚠️ No consent yet"}</p>
+        <p><strong>Stored data:</strong> ${this.sessionData.length} sessions</p>
+        <p><small>Data is stored locally in your browser and automatically deleted after 24 hours.</small></p>
+        <button id="exportDataBtn" class="btn-privacy">📥 Export My Data (JSON)</button>
+        <button id="deleteDataBtn" class="btn-privacy danger">🗑️ Delete All Data</button>
+        <button id="closePanelBtn" class="btn-privacy">Close</button>
       </div>
     `;
 
@@ -309,10 +309,10 @@ class PrivacyGuard {
 
     document.getElementById("deleteDataBtn").onclick = () => {
       if (
-        confirm("Hapus semua data sesi? Tindakan ini tidak dapat dibatalkan.")
+        confirm("Delete all session data? This action cannot be undone.")
       ) {
         this.deleteAllData();
-        alert("Semua data telah dihapus.");
+        alert("All data has been deleted.");
         panel.remove();
       }
     };
@@ -340,18 +340,18 @@ class SafetyOverride {
     this.blinkHistory.push({ ear, frame: frameCount });
     if (this.blinkHistory.length > 300) this.blinkHistory.shift();
 
-    // Hazard 1: Terlalu lama tidak berkedip (EAR tinggi terus)
+    // Hazard 1: Too long without blinking (consistently high EAR)
     const highEarFrames = this.blinkHistory.filter((h) => h.ear > 0.32).length;
     if (highEarFrames > 180) {
       hazards.push({
         type: "eye_strain",
         message:
-          "⚠️ Anda terlalu lama tidak berkedip! Istirahatkan mata sejenak (20-20-20 rule: lihat jauh 20 detik).",
+          "⚠️ You haven't blinked in a while! Rest your eyes (20-20-20 rule: look 20 feet away for 20 seconds).",
         severity: "medium",
       });
     }
 
-    // Hazard 2: Terlalu banyak menguap (mouth ratio tinggi)
+    // Hazard 2: Excessive yawning (high mouth ratio)
     return hazards;
   }
 
@@ -361,9 +361,9 @@ class SafetyOverride {
     intervention.innerHTML = `
       <div class="intervention-card">
         <div class="intervention-icon">🛡️</div>
-        <h4>Intervensi Keamanan</h4>
+        <h4>Safety Intervention</h4>
         <p>${message}</p>
-        <button class="intervention-dismiss">Saya Mengerti</button>
+        <button class="intervention-dismiss">I Understand</button>
       </div>
     `;
 
@@ -393,7 +393,7 @@ class SafetyOverride {
 }
 
 // ─────────────────────────────────────────────
-// Export untuk digunakan di focus.js
+// Export for use in focus.js
 // ─────────────────────────────────────────────
 window.EthicalGuardrails = {
   ExplainabilityEngine,

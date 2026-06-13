@@ -1,17 +1,17 @@
 /**
  * FocusWebCam V2 — focus.js
  * ===========================
- * Menggunakan model Logistic Regression hasil training dari focus_model.pkl
- * Terintegrasi dengan Ethical Guardrails
+ * Uses Logistic Regression model trained from focus_model.pkl
+ * Integrated with Ethical Guardrails
  * 
- * Model coefficients dari training_report.txt:
- *   ear         : +1.0494  ↑ meningkatkan FOKUS
- *   head_pose   : -2.6625  ↓ menurunkan FOKUS
- *   mouth_ratio : +2.0005  ↑ meningkatkan FOKUS
+ * Model coefficients from training_report.txt:
+ *   ear         : +1.0494  ↑ increases FOCUS
+ *   head_pose   : -2.6625  ↓ decreases FOCUS
+ *   mouth_ratio : +2.0005  ↑ increases FOCUS
  */
 
 // ─────────────────────────────────────────────
-// MODEL PARAMETERS (dari Logistic Regression training)
+// MODEL PARAMETERS (from Logistic Regression training)
 // ─────────────────────────────────────────────
 const MODEL = {
   coef: {
@@ -29,7 +29,7 @@ const MODEL = {
 };
 
 // ─────────────────────────────────────────────
-// Hyperparameter visual & alert
+// Visual & alert hyperparameters
 // ─────────────────────────────────────────────
 const CONFIG = {
   ALERT_THRESHOLD: 40,
@@ -84,7 +84,7 @@ const overlayCanvas = document.getElementById('overlayCanvas');
 const ctx = overlayCanvas ? overlayCanvas.getContext('2d') : null;
 
 // ─────────────────────────────────────────────
-// State aplikasi
+// Application state
 // ─────────────────────────────────────────────
 let isRunning = false;
 let sessionHistory = [];
@@ -105,7 +105,7 @@ let safetyOverride = null;
 let ethicalCompliance = { consentObtained: false, explainabilityEnabled: true };
 
 // ─────────────────────────────────────────────
-// Utilitas perhitungan fitur
+// Feature calculation utilities
 // ─────────────────────────────────────────────
 
 function dist(a, b) {
@@ -172,7 +172,7 @@ function smoothScore(newScore) {
 }
 
 // ─────────────────────────────────────────────
-// Normalisasi untuk tampilan (HANYA VISUAL)
+// Normalization for display (VISUAL ONLY)
 // ─────────────────────────────────────────────
 
 function normalizeEARForDisplay(ear) {
@@ -258,7 +258,7 @@ function showExplanationPanel(explanation) {
   }
   
   currentExplanationPanel.innerHTML = `
-    <h4>📊 Mengapa skor ${explanation.score}?</h4>
+    <h4>📊 Why score ${explanation.score}?</h4>
     <p>${explanation.explanation}</p>
     <div class="suggestion">💡 ${explanation.suggestion}</div>
     <div style="margin-top: 8px; font-size: 0.6rem; color: var(--text-dim);">
@@ -297,10 +297,10 @@ function checkAlert(score) {
 function triggerAlert(score) {
   alertCount++;
   elAlerts.textContent = alertCount;
-  elToastMsg.textContent = `Skor ${score} selama ${CONFIG.ALERT_DURATION} detik`;
+  elToastMsg.textContent = `Score ${score} for ${CONFIG.ALERT_DURATION} seconds`;
   elToast.classList.add('show');
   playBeep();
-  addLog(`⚠ Alert #${alertCount} — skor ${score} (model prediction)`, 'log-alert');
+  addLog(`⚠ Alert #${alertCount} — score ${score} (model prediction)`, 'log-alert');
   setTimeout(() => elToast.classList.remove('show'), 4000);
 }
 
@@ -331,16 +331,16 @@ function updateUI(score, earNorm, headNorm, mouthNorm, ear, headPose, mouth) {
   elCameraFrame.classList.remove('state-focus', 'state-medium', 'state-unfocus');
   if (score >= 65) {
     elCameraFrame.classList.add('state-focus');
-    elScoreState.textContent = 'FOKUS';
-    elFaceStatus.textContent = 'Wajah terdeteksi — Fokus';
+    elScoreState.textContent = 'FOCUS';
+    elFaceStatus.textContent = 'Face detected — Focused';
   } else if (score >= 40) {
     elCameraFrame.classList.add('state-medium');
-    elScoreState.textContent = 'PERHATIAN';
-    elFaceStatus.textContent = 'Wajah terdeteksi — Perhatian';
+    elScoreState.textContent = 'ATTENTION';
+    elFaceStatus.textContent = 'Face detected — Attention needed';
   } else {
     elCameraFrame.classList.add('state-unfocus');
-    elScoreState.textContent = 'TIDAK FOKUS';
-    elFaceStatus.textContent = 'Wajah terdeteksi — Tidak Fokus';
+    elScoreState.textContent = 'NOT FOCUSED';
+    elFaceStatus.textContent = 'Face detected — Not focused';
   }
   
   elEAR.textContent = ear.toFixed(3);
@@ -359,8 +359,8 @@ function updateUI(score, earNorm, headNorm, mouthNorm, ear, headPose, mouth) {
 function updateNoFace() {
   elScore.textContent = '0';
   elScoreBar.style.width = '0%';
-  elScoreState.textContent = 'TIDAK ADA WAJAH';
-  elFaceStatus.textContent = 'Tidak ada wajah terdeteksi';
+  elScoreState.textContent = 'NO FACE';
+  elFaceStatus.textContent = 'No face detected';
   elCameraFrame.classList.remove('state-focus', 'state-medium', 'state-unfocus');
   elEAR.textContent = '—';
   elHead.textContent = '—';
@@ -503,7 +503,7 @@ async function initEthicalGuardrails() {
   ethicalCompliance.consentObtained = await privacyGuard.requestConsent();
   
   if (!ethicalCompliance.consentObtained) {
-    addLog('❌ Pengguna menolak persetujuan privasi. Data tidak akan disimpan.', 'log-alert');
+    addLog('❌ User denied privacy consent. Data will not be stored.', 'log-alert');
     elHeaderSt.textContent = 'PRIVACY MODE (Limited)';
     return false;
   }
@@ -512,7 +512,7 @@ async function initEthicalGuardrails() {
   biasMitigation = new EthicalGuardrails.BiasMitigation();
   safetyOverride = new EthicalGuardrails.SafetyOverride();
   
-  addLog('✅ Ethical Guardrails aktif: Transparansi + Mitigasi Bias + Privasi', 'log-focus');
+  addLog('✅ Ethical Guardrails active: Transparency + Bias Mitigation + Privacy', 'log-focus');
   addLog(`📊 Model coefficients: EAR=${MODEL.coef.ear}, Head=${MODEL.coef.head_pose}, Mouth=${MODEL.coef.mouth_ratio}`, 'log-system');
   
   addPrivacyButton();
@@ -524,35 +524,40 @@ function addPrivacyButton() {
   const btn = document.createElement('button');
   btn.className = 'privacy-btn';
   btn.innerHTML = '🔒';
-  btn.title = 'Kontrol Privasi (GDPR)';
+  btn.title = 'Privacy Control (GDPR)';
   btn.onclick = () => { if (privacyGuard) privacyGuard.showPrivacyPanel(); };
   document.body.appendChild(btn);
 }
 
 // ─────────────────────────────────────────────
-// Start / Stop Session
+// Start / Stop Session - ENHANCED RESOLUTION
 // ─────────────────────────────────────────────
 
 async function startSession() {
   try {
-    elHeaderSt.textContent = 'MEMINTA AKSES KAMERA...';
+    elHeaderSt.textContent = 'REQUESTING CAMERA ACCESS...';
     
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 640, height: 480, facingMode: 'user' }
+      video: { 
+        width: { ideal: 1280, max: 1920 },
+        height: { ideal: 720, max: 1080 },
+        frameRate: { ideal: 30, max: 60 },
+        facingMode: 'user'
+      }
     });
     
     webcamEl.srcObject = stream;
     await webcamEl.play();
     
     if (overlayCanvas) {
-      overlayCanvas.width = webcamEl.videoWidth || 640;
-      overlayCanvas.height = webcamEl.videoHeight || 480;
+      overlayCanvas.width = webcamEl.videoWidth || 1280;
+      overlayCanvas.height = webcamEl.videoHeight || 720;
     }
     
     camera = new Camera(webcamEl, {
       onFrame: async () => { await faceMesh.send({ image: webcamEl }); },
-      width: 640,
-      height: 480,
+      width: 1280,
+      height: 720,
     });
     camera.start();
     
@@ -565,21 +570,21 @@ async function startSession() {
     lastScores = [];
     frameCounter = 0;
     
-    elBtnStart.textContent = 'HENTIKAN SESI';
+    elBtnStart.textContent = 'END SESSION';
     elBtnStart.classList.add('active');
-    elHeaderSt.textContent = 'SESI AKTIF (Logistic Regression)';
+    elHeaderSt.textContent = 'SESSION ACTIVE (Logistic Regression)';
     elAlerts.textContent = '0';
     elAvg.textContent = '--';
     elFocusTime.textContent = '--%';
     elDuration.textContent = '00:00';
     
     statsTimer = setInterval(updateStats, 1000);
-    addLog('🎯 Sesi dimulai — Menggunakan model Logistic Regression terlatih', 'log-focus');
+    addLog('🎯 Session started — Using trained Logistic Regression model', 'log-focus');
     
   } catch (err) {
-    elHeaderSt.textContent = 'ERROR KAMERA';
+    elHeaderSt.textContent = 'CAMERA ERROR';
     addLog(`❌ Error: ${err.message}`, 'log-alert');
-    alert('Tidak bisa mengakses kamera. Pastikan izin kamera sudah diberikan.');
+    alert('Cannot access camera. Please grant camera permission.');
   }
 }
 
@@ -600,14 +605,14 @@ function stopSession() {
   
   if (ctx) ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
   
-  elBtnStart.textContent = 'MULAI SESI';
+  elBtnStart.textContent = 'START SESSION';
   elBtnStart.classList.remove('active');
-  elHeaderSt.textContent = 'SESI SELESAI';
+  elHeaderSt.textContent = 'SESSION ENDED';
   elCameraFrame.classList.remove('state-focus', 'state-medium', 'state-unfocus');
   elScore.textContent = '--';
   elScoreBar.style.width = '0%';
   elScoreState.textContent = '—';
-  elFaceStatus.textContent = 'Menunggu wajah...';
+  elFaceStatus.textContent = 'Waiting for face...';
   lastScores = [];
   
   if (privacyGuard && ethicalCompliance.consentObtained && sessionHistory.length > 0) {
@@ -623,15 +628,15 @@ function stopSession() {
       alertCount: alertCount,
       duration: elapsed
     });
-    addLog('🔒 Data sesi disimpan secara anonim (lokal, otomatis hapus 24 jam)', 'log-system');
+    addLog('🔒 Session data stored anonymously (local, auto-delete in 24 hours)', 'log-system');
   }
   
   if (sessionHistory.length > 0) {
     const avg = Math.round(sessionHistory.reduce((a, b) => a + b, 0) / sessionHistory.length);
     const pct = Math.round(sessionHistory.filter(s => s >= CONFIG.ALERT_THRESHOLD).length / sessionHistory.length * 100);
-    addLog(`📊 Sesi selesai — avg ${avg}, fokus ${pct}%, ${alertCount} alert`, 'log-system');
+    addLog(`📊 Session ended — avg ${avg}, focus ${pct}%, ${alertCount} alerts`, 'log-system');
   } else {
-    addLog('Sesi selesai', 'log-system');
+    addLog('Session ended', 'log-system');
   }
 }
 
@@ -648,8 +653,8 @@ elBtnStart.addEventListener('click', () => {
 });
 
 // Initialize
-elHeaderSt.textContent = 'SIAP — Model Logistic Regression';
-addLog('🤖 Model loaded — Logistic Regression dari focus_model.pkl', 'log-system');
+elHeaderSt.textContent = 'READY — Logistic Regression Model';
+addLog('🤖 Model loaded — Logistic Regression from focus_model.pkl', 'log-system');
 
 // Load ethical guardrails
 initEthicalGuardrails();

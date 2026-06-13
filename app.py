@@ -1,5 +1,5 @@
 """
-FocusWebCam — Streamlit App (Fixed)
+FocusWebCam — Streamlit App 
 """
 
 import streamlit as st
@@ -99,17 +99,17 @@ def get_cv_color(score):
 
 def explain_score(ear, head, mouth, score):
     neg = []
-    if ear   < 0.20: neg.append("mata tertutup/berkedip")
-    if head  > 0.15: neg.append("kepala menoleh")
-    if mouth > 0.08: neg.append("mulut terbuka")
+    if ear   < 0.20: neg.append("eyes closed/blinking")
+    if head  > 0.15: neg.append("head turned away")
+    if mouth > 0.08: neg.append("mouth open")
     if score >= 65:
-        return f"Fokus baik ({score}/100)"
+        return f"Good focus ({score}/100)"
     elif score >= 40:
-        isu = ", ".join(neg) if neg else "pertahankan kondisi"
-        return f"Perhatian ({score}/100) — {isu}"
+        issue = ", ".join(neg) if neg else "maintain condition"
+        return f"Attention ({score}/100) — {issue}"
     else:
-        isu = ", ".join(neg) if neg else "kondisi tidak optimal"
-        return f"Tidak fokus ({score}/100) — {isu}"
+        issue = ", ".join(neg) if neg else "suboptimal condition"
+        return f"Not focused ({score}/100) — {issue}"
 
 # ─────────────────────────────────────────────
 # Queue Initialization
@@ -130,7 +130,7 @@ def init_state():
         "alert_count":      0,
         "low_score_count":  0,
         "last_alert_time":  0,
-        "log_entries":      [("system", "— Sistem siap —")],
+        "log_entries":      [("system", "— System ready —")],
         "consent_given":    False,
         "consent_asked":    False,
         "show_session_complete": False,
@@ -224,7 +224,7 @@ class FocusVideoProcessor:
                 cv2.line(img,(px,py),(px+dx*sz,py),color,t)
                 cv2.line(img,(px,py),(px,py+dy*sz),color,t)
         else:
-            cv2.putText(img, "Tidak ada wajah terdeteksi", (20,40),
+            cv2.putText(img, "No face detected", (20,40),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.62, (100,120,140), 1)
             data = {"face": False, "score": 0,
                     "ear": None, "head": None, "mouth": None, "expl": ""}
@@ -276,8 +276,8 @@ def drain_queue():
             st.session_state.low_score_count = 0
             ts = datetime.now().strftime("%H:%M:%S")
             st.session_state.log_entries.insert(
-                0, ("alert", f"⚠️ [{ts}] Alert #{st.session_state.alert_count} — skor {score}"))
-            st.toast(f"⚠️ Fokus menurun! Skor Anda: {score}", icon="🚨")
+                0, ("alert", f"⚠️ [{ts}] Alert #{st.session_state.alert_count} — score {score}"))
+            st.toast(f"⚠️ Focus decreasing! Your score: {score}", icon="🚨")
     return True
 
 # ═══════════════════════════════════════════════════════════════
@@ -806,7 +806,7 @@ if st.session_state.show_session_complete:
             st.session_state.low_score_count = 0
             st.session_state.last_alert_time = 0
             st.session_state.disp_score      = None
-            st.session_state.log_entries     = [("system", "— Sistem siap —")]
+            st.session_state.log_entries     = [("system", "— System ready —")]
             st.session_state.consent_asked   = False
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -842,13 +842,13 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Layout Kolom ──
+# ── Layout Columns ──
 cam_col, info_col = st.columns([3, 2], gap="medium")
 
 with cam_col:
     st.markdown('<div class="main-btn-container">', unsafe_allow_html=True)
 
-    # 1. Tombol Start / End Session (paling atas, lebar penuh)
+    # 1. Start / End Session button (top, full width)
     if not st.session_state.session_active:
         st.markdown('<div class="btn-start-box">', unsafe_allow_html=True)
         if st.button("▶  Start Session", key="btn_start", use_container_width=True):
@@ -881,7 +881,7 @@ with cam_col:
             st.session_state.show_session_complete = True
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 2. WebRTC kamera (tengah)
+    # 2. WebRTC camera (center) - ENHANCED RESOLUTION
     st.markdown('<div style="margin-top:10px;margin-bottom:8px;">', unsafe_allow_html=True)
     rtc_config = RTCConfiguration(
         {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
@@ -891,12 +891,19 @@ with cam_col:
         mode=WebRtcMode.SENDRECV,
         rtc_configuration=rtc_config,
         video_processor_factory=FocusVideoProcessor,
-        media_stream_constraints={"video": {"width": 640, "height": 480}, "audio": False},
+        media_stream_constraints={
+            "video": {
+                "width": {"ideal": 1280, "max": 1920},
+                "height": {"ideal": 720, "max": 1080},
+                "frameRate": {"ideal": 30, "max": 60}
+            }, 
+            "audio": False
+        },
         async_processing=True,
     )
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # 3. Tombol Back to Home (paling bawah, lebar penuh)
+    # 3. Back to Home button (bottom, full width)
     st.markdown('<div class="btn-back-box">', unsafe_allow_html=True)
     if st.button("← Back to Home", key="btn_back", use_container_width=True):
         st.session_state.page = "landing"
@@ -904,9 +911,9 @@ with cam_col:
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)  # tutup main-btn-container
+    st.markdown('</div>', unsafe_allow_html=True)  # close main-btn-container
 
-# ── Panel Info Kanan ──
+# ── Right Info Panel ──
 with info_col:
     score = st.session_state.disp_score
     ear   = st.session_state.disp_ear
@@ -1025,7 +1032,7 @@ with info_col:
     </div>
     """, unsafe_allow_html=True)
 
-# ── Auto-rerun hanya saat kamera aktif dan session berjalan ──
+# ── Auto-rerun only when camera is active and session is running ──
 if ctx is not None and ctx.state.playing:
     time.sleep(0.4)
     st.rerun()
