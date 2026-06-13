@@ -34,9 +34,10 @@ This browser will automatically open at `http://localhost:8501`
 
 ---
 
-#### Streamlit Link 
+## Streamlit Link 
 Or run it directly via the link below:
-https://focus-webcam.streamlit.app/
+
+[https://focus-webcam.streamlit.app/](url)
 
 ## Deploy to Streamlit Cloud
 
