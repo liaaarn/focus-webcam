@@ -43,7 +43,7 @@ MODEL_SCALER = {
     "mouth_ratio": {"mean": 0.068, "std": 0.082},
 }
 ALERT_THRESHOLD  = 40
-SMOOTHING_WINDOW = 3
+SMOOTHING_WINDOW = 2
 
 MOUTH_MAX_REALISTIC = 0.12
 
@@ -893,9 +893,9 @@ with cam_col:
         video_processor_factory=FocusVideoProcessor,
         media_stream_constraints={
             "video": {
-                "width": {"ideal": 1280, "max": 1920},
-                "height": {"ideal": 720, "max": 1080},
-                "frameRate": {"ideal": 30, "max": 60}
+                "width": {"ideal": 640, "max": 8845},
+                "height": {"ideal": 480, "max": 480},
+                "frameRate": {"ideal": 24, "max": 30}
             }, 
             "audio": False
         },

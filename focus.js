@@ -538,10 +538,10 @@ async function startSession() {
     elHeaderSt.textContent = 'REQUESTING CAMERA ACCESS...';
     
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { 
-        width: { ideal: 1280, max: 1920 },
-        height: { ideal: 720, max: 1080 },
-        frameRate: { ideal: 30, max: 60 },
+      vide: {
+        width: { ideal: 640, max: 854 },
+        height: { ideal: 480, max: 480 },
+        frameRate: { ideal: 24, max: 30 },
         facingMode: 'user'
       }
     });
@@ -550,14 +550,14 @@ async function startSession() {
     await webcamEl.play();
     
     if (overlayCanvas) {
-      overlayCanvas.width = webcamEl.videoWidth || 1280;
-      overlayCanvas.height = webcamEl.videoHeight || 720;
+      overlayCanvas.width = webcamEl.videoWidth || 640;
+      overlayCanvas.height = webcamEl.videoHeight || 480;
     }
     
     camera = new Camera(webcamEl, {
       onFrame: async () => { await faceMesh.send({ image: webcamEl }); },
-      width: 1280,
-      height: 720,
+      width: 640,
+      height: 480,
     });
     camera.start();
     
