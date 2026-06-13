@@ -1,9 +1,8 @@
 # FocusWebCam — Streamlit Edition
 
-Deteksi fokus real-time berbasis AI menggunakan webcam, MediaPipe FaceMesh,
-dan model Logistic Regression terlatih.
+Real-time AI-based focus detection using webcam, MediaPipe FaceMesh, and a trained Logistic Regression model.
 
-## Cara Menjalankan
+## How to Run
 
 ### 1. Install dependencies
 
@@ -11,42 +10,43 @@ dan model Logistic Regression terlatih.
 pip install -r requirements.txt
 ```
 
-### 2. Pastikan file model ada
+### 2.Ensure the model file exists
 
 ```
 focuswebcam/
 ├── app.py
 ├── requirements.txt
-└── focus_model.pkl   ← hasil dari train_model.py
+└── focus_model.pkl   ← output from train_model.py
 ```
 
-> Jika belum punya `focus_model.pkl`, jalankan dulu:
+> If you don't have `focus_model.pkl` yet, run this first:
 > ```bash
 > python train_model.py --input features.csv
 > ```
 
-### 3. Jalankan Streamlit
+### 3. Run Streamlit
 
 ```bash
 streamlit run app.py
 ```
 
-Browser akan terbuka otomatis di `http://localhost:8501`
+This browser will automatically open at `http://localhost:8501`
 
 ---
 
-### Link Streamlit 
-'https://focus-webcam.streamlit.app/'
+#### Streamlit Link 
+Or run it directly via the link below:
+https://focus-webcam.streamlit.app/
 
-## Deploy ke Streamlit Cloud
+## Deploy to Streamlit Cloud
 
-1. Push folder ini ke GitHub
-2. Buka [share.streamlit.io](https://share.streamlit.io)
-3. Hubungkan repo, pilih `app.py` sebagai entry point
-4. Klik **Deploy**
+1. Push this folder to GitHub
+2. Open [share.streamlit.io](https://share.streamlit.io)
+3. Connect your repository and select `app.py` as the entry point
+4. Click **Deploy**
 
-> **Catatan:** Untuk Streamlit Cloud, pastikan `focus_model.pkl` ikut di-commit ke repo,
-> atau load model dari URL (lihat komentar di `app.py`).
+> **Note:** For Streamlit Cloud, make sure `focus_model.pkl` is committed to the repository,
+> or load the model from a URL (see comments in `app.py`).
 
 ---
 
@@ -54,13 +54,13 @@ Browser akan terbuka otomatis di `http://localhost:8501`
 
 | Fitur | Deskripsi |
 |-------|-----------|
-| 🎯 Focus Score | Skor 0–100 dari model Logistic Regression |
-| 👁 EAR | Eye Aspect Ratio — keterbukaan mata |
-| ↔ Head Pose | Orientasi kepala terhadap kamera |
-| 💬 Mouth Ratio | Deteksi menguap/mulut terbuka |
-| ⚠️ Alert | Notifikasi saat fokus rendah >5 detik |
-| 🔒 Privacy | Semua data diproses lokal, tidak dikirim ke server |
-| 📊 Explainability | Penjelasan mengapa skor naik/turun |
+| 🎯 Focus Score | 0–100 score from the Logistic Regression model |
+| 👁 EAR | Eye Aspect Ratio — eye openness |
+| ↔ Head Pose | Head orientation relative to the camera |
+| 💬 Mouth Ratio | Yawning/open mouth detection |
+| ⚠️ Alert | Notifications when focus is low for >5 seconds |
+| 🔒 Privacy | All data is processed locally, no data is sent to servers |
+| 📊 Explainability | Explanations of why the score goes up/down |
 
 ---
 
@@ -68,8 +68,8 @@ Browser akan terbuka otomatis di `http://localhost:8501`
 
 | Aspek | HTML (localhost) | Streamlit |
 |-------|-----------------|-----------|
-| Deployment | Buka file langsung | `streamlit run` |
-| Model inference | JS (koefisien hardcode) | Python (sklearn pkl) |
+| Deployment | Open file directly | `streamlit run` |
+| Model inference | JS (hardcoded coefficients) | Python (sklearn pkl) |
 | Real-time video | MediaPipe CDN | streamlit-webrtc + OpenCV |
-| UI | CSS kustom penuh | Streamlit + CSS inject |
-| Cloud deploy | Tidak langsung | Streamlit Cloud / HuggingFace |
+| UI | Full custom CSS | Streamlit + CSS inject |
+| Cloud deploy | Not straightforward | Streamlit Cloud / HuggingFace |
